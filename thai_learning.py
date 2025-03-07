@@ -802,14 +802,23 @@ def handle_audio_message(event):
         )
 
 # 測試 Azure 語音服務連接
-@app.before_first_request
+# 在應用初始化時測試 Azure 語音服務連接
 def test_azure_connection():
-    """在應用啟動時測試 Azure 語音服務連接"""
+    """測試 Azure 語音服務連接"""
     try:
         speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
         logger.info("Azure Speech Services 連接測試成功")
     except Exception as e:
         logger.error(f"Azure Speech Services 連接測試失敗: {str(e)}")
+
+# 使用 before_serving 事件 (需要在啟動應用前註冊)
+@app.before_serving
+def before_serving():
+    test_azure_connection()
+
+# 或者使用應用上下文方式
+# with app.app_context():
+#     test_azure_connection()
 
 if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
