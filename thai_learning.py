@@ -564,18 +564,22 @@ def show_learning_progress(user_id):
 def show_main_menu():
     """顯示主選單"""
     logger.info("顯示主選單")
-    buttons_template = ButtonsTemplate(
-        title='泰語學習系統',
-        text='請選擇學習模式',
-        actions=[
-            MessageAction(label='詞彙學習', text='詞彙學習'),
-            MessageAction(label='發音練習', text='練習發音'),
-            MessageAction(label='音調學習', text='音調學習'),
-            MessageAction(label='對話練習', text='對話練習'),
-            MessageAction(label='學習進度', text='學習進度')
+    
+    # 使用 QuickReply 代替 ButtonsTemplate，因為 QuickReply 可以支援更多按鈕
+    quick_reply = QuickReply(
+        items=[
+            QuickReplyButton(action=MessageAction(label='詞彙學習', text='詞彙學習')),
+            QuickReplyButton(action=MessageAction(label='發音練習', text='練習發音')),
+            QuickReplyButton(action=MessageAction(label='音調學習', text='音調學習')),
+            QuickReplyButton(action=MessageAction(label='對話練習', text='對話練習')),
+            QuickReplyButton(action=MessageAction(label='學習進度', text='學習進度'))
         ]
     )
-    return TemplateSendMessage(alt_text='選擇學習模式', template=buttons_template)
+    
+    return TextSendMessage(
+        text="🇹🇭 歡迎使用泰語學習系統 🇹🇭\n請選擇您想要的學習模式：",
+        quick_reply=quick_reply
+    )
 
 # === LINE Bot Webhook 處理 ===
 @app.route("/callback", methods=['POST'])
