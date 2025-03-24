@@ -958,14 +958,13 @@ def handle_text_message(event):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
-        @handler.add(MessageEvent, message=AudioMessage)
+@handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     """處理音頻消息，主要用於發音評估"""
     user_id = event.source.user_id
     user_data = user_data_manager.get_user_data(user_id)
     
     logger.info(f"收到用戶 {user_id} 的音頻訊息")
-    
     # 檢查用戶是否在發音練習中
     if user_data.get('current_activity') == 'echo_practice':
         try:
