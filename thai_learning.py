@@ -92,6 +92,247 @@ class UserData:
         user_data['last_active'] = self.current_date()
 
 user_data_manager = UserData()
+
+# === 泰語學習資料 ===
+thai_data = {
+    'categories': {
+        'daily_phrases': {
+            'name': '日常用語',
+            'words': ['你好', '謝謝', '再見', '對不起', '早安', '晚安', '不客氣', '怎麼走？', '多少錢', '好吃']
+        },
+        'numbers': {
+            'name': '數字',
+            'words': ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+        },
+        'animals': {
+            'name': '動物',
+            'words': ['貓', '狗', '鳥', '魚', '大象', '老虎', '猴子', '雞', '豬', '牛']
+        },
+        'food': {
+            'name': '食物',
+            'words': ['米飯', '麵', '啤酒', '麵包', '雞翅', '芒果糯米飯', '炒飯', '青木瓜沙拉', '冬蔭功湯', '泰式炒河粉']
+        },
+        'transportation': {
+            'name': '交通工具',
+            'words': ['車子', '公車', '計程車', '摩托車', '火車', '飛機', '船', '腳踏車', '嘟嘟車', '貨車']
+        }
+    },
+    'basic_words': {
+        # 日常用語
+        '你好': {'thai': 'สวัสดี', 'pronunciation': 'sa-wat-dee', 'tone': 'mid-falling-mid',
+               'audio_url': 'https://example.com/audio/sawatdee.mp3',
+               'image_url': 'https://example.com/images/greeting.jpg'},
+        '謝謝': {'thai': 'ขอบคุณ', 'pronunciation': 'khop-khun', 'tone': 'low-mid',
+               'audio_url': 'https://example.com/audio/kopkhun.mp3',
+               'image_url': 'https://example.com/images/thanks.jpg'},
+        '再見': {'thai': 'ลาก่อน', 'pronunciation': 'la-kon', 'tone': 'mid-mid',
+               'audio_url': 'https://example.com/audio/lakon.mp3',
+               'image_url': 'https://example.com/images/goodbye.jpg'},
+        '對不起': {'thai': 'ขอโทษ', 'pronunciation': 'kho-thot', 'tone': 'low-low',
+                'audio_url': 'https://example.com/audio/khotot.mp3',
+                'image_url': 'https://example.com/images/sorry.jpg'},
+        '早安': {'thai': 'อรุณสวัสดิ์', 'pronunciation': 'a-run-sa-wat', 'tone': 'mid-mid-falling-mid',
+              'audio_url': 'https://example.com/audio/arunsawat.mp3',
+              'image_url': 'https://example.com/images/morning.jpg'},
+        '晚安': {'thai': 'ราตรีสวัสดิ์', 'pronunciation': 'ra-tree-sa-wat', 'tone': 'mid-mid-falling-mid',
+              'audio_url': 'https://example.com/audio/ratreesawat.mp3',
+              'image_url': 'https://example.com/images/night.jpg'},
+        '不客氣': {'thai': 'ไม่เป็นไร', 'pronunciation': 'mai-pen-rai', 'tone': 'mid-mid-mid',
+                'audio_url': 'https://example.com/audio/maipenrai.mp3',
+                'image_url': 'https://example.com/images/yourewelcome.jpg'},
+        '怎麼走？': {'thai': 'ไปทางไหน', 'pronunciation': 'pai-tang-nai', 'tone': 'mid-mid-mid',
+                'audio_url': 'https://example.com/audio/paitangnai.mp3',
+                'image_url': 'https://example.com/images/howtoget.jpg'},
+        '多少錢': {'thai': 'เท่าไหร่', 'pronunciation': 'tao-rai', 'tone': 'mid-mid',
+               'audio_url': 'https://example.com/audio/taorai.mp3',
+               'image_url': 'https://example.com/images/price.jpg'},
+        '好吃': {'thai': 'อร่อย', 'pronunciation': 'a-roi', 'tone': 'mid-mid',
+               'audio_url': 'https://example.com/audio/aroi.mp3',
+               'image_url': 'https://example.com/images/delicious.jpg'},
+        
+        # 數字
+        '一': {'thai': 'หนึ่ง', 'pronunciation': 'neung', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/neung.mp3',
+             'image_url': 'https://example.com/images/one.jpg'},
+        '二': {'thai': 'สอง', 'pronunciation': 'song', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/song.mp3',
+             'image_url': 'https://example.com/images/two.jpg'},
+        '三': {'thai': 'สาม', 'pronunciation': 'sam', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/sam.mp3',
+             'image_url': 'https://example.com/images/three.jpg'},
+        '四': {'thai': 'สี่', 'pronunciation': 'see', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/see.mp3',
+             'image_url': 'https://example.com/images/four.jpg'},
+        '五': {'thai': 'ห้า', 'pronunciation': 'ha', 'tone': 'falling',
+             'audio_url': 'https://example.com/audio/ha.mp3',
+             'image_url': 'https://example.com/images/five.jpg'},
+        '六': {'thai': 'หก', 'pronunciation': 'hok', 'tone': 'low',
+             'audio_url': 'https://example.com/audio/hok.mp3',
+             'image_url': 'https://example.com/images/six.jpg'},
+        '七': {'thai': 'เจ็ด', 'pronunciation': 'jet', 'tone': 'falling',
+             'audio_url': 'https://example.com/audio/jet.mp3',
+             'image_url': 'https://example.com/images/seven.jpg'},
+        '八': {'thai': 'แปด', 'pronunciation': 'paet', 'tone': 'falling',
+             'audio_url': 'https://example.com/audio/paet.mp3',
+             'image_url': 'https://example.com/images/eight.jpg'},
+        '九': {'thai': 'เก้า', 'pronunciation': 'kao', 'tone': 'falling',
+             'audio_url': 'https://example.com/audio/kao.mp3',
+             'image_url': 'https://example.com/images/nine.jpg'},
+        '十': {'thai': 'สิบ', 'pronunciation': 'sip', 'tone': 'low',
+             'audio_url': 'https://example.com/audio/sip.mp3',
+             'image_url': 'https://example.com/images/ten.jpg'},
+        
+        # 動物
+        '貓': {'thai': 'แมว', 'pronunciation': 'maew', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/maew.mp3',
+             'image_url': 'https://example.com/images/cat.jpg'},
+        '狗': {'thai': 'หมา', 'pronunciation': 'ma', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/ma.mp3',
+             'image_url': 'https://example.com/images/dog.jpg'},
+        '鳥': {'thai': 'นก', 'pronunciation': 'nok', 'tone': 'low',
+             'audio_url': 'https://example.com/audio/nok.mp3',
+             'image_url': 'https://example.com/images/bird.jpg'},
+        '魚': {'thai': 'ปลา', 'pronunciation': 'pla', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/pla.mp3',
+             'image_url': 'https://example.com/images/fish.jpg'},
+        '大象': {'thai': 'ช้าง', 'pronunciation': 'chang', 'tone': 'high',
+              'audio_url': 'https://example.com/audio/chang.mp3',
+              'image_url': 'https://example.com/images/elephant.jpg'},
+        '老虎': {'thai': 'เสือ', 'pronunciation': 'suea', 'tone': 'low',
+              'audio_url': 'https://example.com/audio/suea.mp3',
+              'image_url': 'https://example.com/images/tiger.jpg'},
+        '猴子': {'thai': 'ลิง', 'pronunciation': 'ling', 'tone': 'mid',
+              'audio_url': 'https://example.com/audio/ling.mp3',
+              'image_url': 'https://example.com/images/monkey.jpg'},
+        '雞': {'thai': 'ไก่', 'pronunciation': 'kai', 'tone': 'low',
+             'audio_url': 'https://example.com/audio/kai.mp3',
+             'image_url': 'https://example.com/images/chicken.jpg'},
+        '豬': {'thai': 'หมู', 'pronunciation': 'moo', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/moo.mp3',
+             'image_url': 'https://example.com/images/pig.jpg'},
+        '牛': {'thai': 'วัว', 'pronunciation': 'wua', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/wua.mp3',
+             'image_url': 'https://example.com/images/cow.jpg'},
+        
+        # 食物
+        '米飯': {'thai': 'ข้าว', 'pronunciation': 'khao', 'tone': 'falling',
+              'audio_url': 'https://example.com/audio/khao.mp3',
+              'image_url': 'https://example.com/images/rice.jpg'},
+        '麵': {'thai': 'ก๋วยเตี๋ยว', 'pronunciation': 'guay-tiew', 'tone': 'falling-falling-low',
+             'audio_url': 'https://example.com/audio/guaytiew.mp3',
+             'image_url': 'https://example.com/images/noodle.jpg'},
+        '啤酒': {'thai': 'เบียร์', 'pronunciation': 'bia', 'tone': 'mid',
+              'audio_url': 'https://example.com/audio/bia.mp3',
+              'image_url': 'https://example.com/images/beer.jpg'},
+        '麵包': {'thai': 'ขนมปัง', 'pronunciation': 'kha-nom-pang', 'tone': 'mid-mid-mid',
+              'audio_url': 'https://example.com/audio/khanompang.mp3',
+              'image_url': 'https://example.com/images/bread.jpg'},
+        '雞翅': {'thai': 'ปีกไก่', 'pronunciation': 'peek-kai', 'tone': 'falling-low',
+              'audio_url': 'https://example.com/audio/peekkai.mp3',
+              'image_url': 'https://example.com/images/chickenwing.jpg'},
+        '芒果糯米飯': {'thai': 'ข้าวเหนียวมะม่วง', 'pronunciation': 'khao-niew-ma-muang', 'tone': 'falling-falling-mid-mid',
+                 'audio_url': 'https://example.com/audio/khaoniewmamuang.mp3',
+                 'image_url': 'https://example.com/images/mangostickyrice.jpg'},
+        '炒飯': {'thai': 'ข้าวผัด', 'pronunciation': 'khao-pad', 'tone': 'falling-low',
+              'audio_url': 'https://example.com/audio/khaopad.mp3',
+              'image_url': 'https://example.com/images/friedrice.jpg'},
+        '青木瓜沙拉': {'thai': 'ส้มตำ', 'pronunciation': 'som-tam', 'tone': 'falling-mid',
+                  'audio_url': 'https://example.com/audio/somtam.mp3',
+                  'image_url': 'https://example.com/images/papayasalad.jpg'},
+        '冬蔭功湯': {'thai': 'ต้มยำกุ้ง', 'pronunciation': 'tom-yum-kung', 'tone': 'high-mid-mid',
+                 'audio_url': 'https://example.com/audio/tomyumkung.mp3',
+                 'image_url': 'https://example.com/images/tomyumkung.jpg'},
+        '泰式炒河粉': {'thai': 'ผัดไทย', 'pronunciation': 'pad-thai', 'tone': 'low-mid',
+                  'audio_url': 'https://example.com/audio/padthai.mp3',
+                  'image_url': 'https://example.com/images/padthai.jpg'},
+        
+        # 交通工具
+        '車子': {'thai': 'รถยนต์', 'pronunciation': 'rot-yon', 'tone': 'high-mid',
+              'audio_url': 'https://example.com/audio/rotyon.mp3',
+              'image_url': 'https://example.com/images/car.jpg'},
+        '公車': {'thai': 'รถเมล์', 'pronunciation': 'rot-mae', 'tone': 'high-mid',
+              'audio_url': 'https://example.com/audio/rotmae.mp3',
+              'image_url': 'https://example.com/images/bus.jpg'},
+        '計程車': {'thai': 'แท็กซี่', 'pronunciation': 'taxi', 'tone': 'mid-mid',
+               'audio_url': 'https://example.com/audio/taxi.mp3',
+               'image_url': 'https://example.com/images/taxi.jpg'},
+        '摩托車': {'thai': 'มอเตอร์ไซค์', 'pronunciation': 'motor-sai', 'tone': 'mid-mid-mid',
+               'audio_url': 'https://example.com/audio/motorsai.mp3',
+               'image_url': 'https://example.com/images/motorcycle.jpg'},
+        '火車': {'thai': 'รถไฟ', 'pronunciation': 'rot-fai', 'tone': 'high-mid',
+              'audio_url': 'https://example.com/audio/rotfai.mp3',
+              'image_url': 'https://example.com/images/train.jpg'},
+        '飛機': {'thai': 'เครื่องบิน', 'pronunciation': 'krueang-bin', 'tone': 'falling-mid',
+              'audio_url': 'https://example.com/audio/krueangbin.mp3',
+              'image_url': 'https://example.com/images/airplane.jpg'},
+        '船': {'thai': 'เรือ', 'pronunciation': 'ruea', 'tone': 'mid',
+             'audio_url': 'https://example.com/audio/ruea.mp3',
+             'image_url': 'https://example.com/images/boat.jpg'},
+        '腳踏車': {'thai': 'จักรยาน', 'pronunciation': 'jak-ka-yan', 'tone': 'low-low-mid',
+               'audio_url': 'https://example.com/audio/jakkayan.mp3',
+               'image_url': 'https://example.com/images/bicycle.jpg'},
+        '嘟嘟車': {'thai': 'ตุ๊กตุ๊ก', 'pronunciation': 'tuk-tuk', 'tone': 'high-high',
+               'audio_url': 'https://example.com/audio/tuktuk.mp3',
+               'image_url': 'https://example.com/images/tuktuk.jpg'},
+        '貨車': {'thai': 'รถบรรทุก', 'pronunciation': 'rot-ban-tuk', 'tone': 'high-mid-low',
+              'audio_url': 'https://example.com/audio/rotbantuk.mp3',
+              'image_url': 'https://example.com/images/truck.jpg'}
+    },
+    'dialogues': {
+        '打招呼': [
+            {'zh': '你好', 'thai': 'สวัสดี', 'pronunciation': 'sa-wat-dee'},
+            {'zh': '你好嗎？', 'thai': 'สบายดีไหม', 'pronunciation': 'sa-bai-dee-mai'},
+            {'zh': '我很好，謝謝', 'thai': 'สบายดี ขอบคุณ', 'pronunciation': 'sa-bai-dee khop-khun'}
+        ],
+        '點餐': [
+            {'zh': '這個多少錢？', 'thai': 'อันนี้เท่าไหร่', 'pronunciation': 'an-nee-tao-rai'},
+            {'zh': '我要這個', 'thai': 'เอาอันนี้', 'pronunciation': 'ao-an-nee'},
+            {'zh': '太貴了', 'thai': 'แพงเกินไป', 'pronunciation': 'paeng-gern-pai'}
+        ],
+        '購物': [
+            {'zh': '便宜一點', 'thai': 'ลดราคาหน่อย', 'pronunciation': 'lot-ra-ka-noi'},
+            {'zh': '我買這個', 'thai': 'ผมซื้ออันนี้/ฉันซื้ออันนี้', 'pronunciation': 'phom/chan sue an-nee'},
+            {'zh': '有折扣嗎？', 'thai': 'มีส่วนลดไหม', 'pronunciation': 'mee-suan-lot-mai'}
+        ]
+    },
+    'tone_guide': {
+        'mid': '中調 - 平穩音調',
+        'low': '低調 - 以較低音高發音',
+        'falling': '降調 - 音調從高降到低',
+        'high': '高調 - 以較高音高發音',
+        'rising': '升調 - 音調從低升到高'
+    },
+    'tone_examples': [
+        {'thai': 'คา', 'meaning': '卡', 'tone': 'mid', 'pronunciation': 'ka (平穩音)'},
+        {'thai': 'ค่า', 'meaning': '價值', 'tone': 'low', 'pronunciation': 'kà (低音)'},
+        {'thai': 'ค้า', 'meaning': '貿易', 'tone': 'falling', 'pronunciation': 'kâ (從高到低)'},
+        {'thai': 'ค๊า', 'meaning': '(語氣詞)', 'tone': 'high', 'pronunciation': 'ká (高音)'},
+        {'thai': 'ค๋า', 'meaning': '(無特定含義)', 'tone': 'rising', 'pronunciation': 'kǎ (從低到高)'}
+    ],
+    'daily_lessons': [
+        {
+            'day': 1, 
+            'theme': '基本問候',
+            'words': ['你好', '謝謝', '再見'],
+            'dialogue': '打招呼'
+        },
+        {
+            'day': 2, 
+            'theme': '基本禮貌用語',
+            'words': ['對不起', '謝謝', '不客氣'],
+            'dialogue': '打招呼'
+        },
+        {
+            'day': 3, 
+            'theme': '購物短語',
+            'words': ['多少錢', '太貴了', '便宜一點'],
+            'dialogue': '購物'
+        }
+    ]
+}
+
+logger.info("已載入泰語學習資料")
+
 # === 輔助函數 ===
 def get_audio_content(message_id):
     """從LINE取得音訊內容"""
@@ -221,244 +462,9 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
             except Exception as e:
                 logger.warning(f"清除臨時檔案失敗: {str(e)}")
                 pass
-            # === 翻牌配對遊戲功能 ===
-def init_matching_game(user_id, category=None):
-    """初始化記憶翻牌遊戲"""
-    logger.info(f"初始化記憶翻牌遊戲，用戶ID: {user_id}")
-    user_data = user_data_manager.get_user_data(user_id)
-    user_data['current_activity'] = 'matching_game'
-    
-    # 選擇詞彙類別
-    if category:
-        cat_words = thai_data['categories'][category]['words']
-    else:
-        # 預設使用當前類別或隨機類別
-        current_cat = user_data.get('current_category')
-        if current_cat:
-            cat_words = thai_data['categories'][current_cat]['words']
-        else:
-            # 隨機選一個類別
-            random_cat = random.choice(list(thai_data['categories'].keys()))
-            cat_words = thai_data['categories'][random_cat]['words']
-    
-    # 選擇6個詞彙製作12張牌（中文和泰文各一張）
-    selected_words = random.sample(cat_words, min(6, len(cat_words)))
-    
-    # 創建牌組
-    cards = []
-    for word in selected_words:
-        thai_word = thai_data['basic_words'][word]['thai']
-        # 添加中文卡
-        cards.append({
-            'id': f'zh_{word}',
-            'value': word,
-            'type': 'zh',
-            'matched': False,
-            'flipped': False
-        })
-        # 添加泰文卡
-        cards.append({
-            'id': f'th_{word}',
-            'value': thai_word,
-            'type': 'th',
-            'matched': False,
-            'flipped': False
-        })
-    
-    # 洗牌
-    random.shuffle(cards)
-    
-    # 保存遊戲狀態
-    user_data['game_state'] = {
-        'cards': cards,
-        'flipped_cards': [],
-        'matched_pairs': 0,
-        'total_pairs': len(selected_words),
-        'moves': 0,
-        'start_time': datetime.now().isoformat()
-    }
-    
-    return user_data['game_state']
 
-def handle_card_flip(user_id, card_id):
-    """處理卡片翻轉邏輯"""
-    logger.info(f"處理卡片翻轉，用戶ID: {user_id}，卡片ID: {card_id}")
-    user_data = user_data_manager.get_user_data(user_id)
-    game_state = user_data.get('game_state', {})
-    
-    if not game_state:
-        return None, "請先開始遊戲"
-    
-    # 找出對應的卡片
-    card = None
-    for c in game_state['cards']:
-        if c['id'] == card_id:
-            card = c
-            break
-    
-    if not card:
-        return game_state, "無效的卡片ID"
-    
-    if card['matched']:
-        return game_state, "此卡片已配對成功"
-    
-    flipped_cards = game_state['flipped_cards']
-    
-    # 如果已經翻了兩張牌，先重置
-    if len(flipped_cards) >= 2:
-        # 重置未配對的翻牌
-        for c in game_state['cards']:
-            if c['id'] in flipped_cards and not c['matched']:
-                c['flipped'] = False
-        flipped_cards = []
-    
-    # 翻轉當前卡片
-    card['flipped'] = True
-    flipped_cards.append(card_id)
-    game_state['flipped_cards'] = flipped_cards
-    game_state['moves'] += 1
-    
-    # 檢查是否配對成功
-    if len(flipped_cards) == 2:
-        card1 = None
-        card2 = None
-        for c in game_state['cards']:
-            if c['id'] == flipped_cards[0]:
-                card1 = c
-            elif c['id'] == flipped_cards[1]:
-                card2 = c
-        
-        # 檢查是否為一對（中文與對應泰文）
-        if card1 and card2:
-            word1 = card1['id'].split('_')[1]
-            word2 = card2['id'].split('_')[1]
-            
-            # 如果是同一個詞的不同語言版本
-            is_match = False
-            
-            # 檢查一：兩張卡片類型不同
-            if card1['type'] != card2['type']:
-                # 檢查二：如果一張是中文一張是泰文
-                if (card1['type'] == 'zh' and card2['type'] == 'th'):
-                    # 檢查中文卡的值是否對應泰文卡
-                    if card2['value'] == thai_data['basic_words'].get(card1['value'], {}).get('thai'):
-                        is_match = True
-                elif (card1['type'] == 'th' and card2['type'] == 'zh'):
-                    # 檢查泰文卡的值是否對應中文卡
-                    if card1['value'] == thai_data['basic_words'].get(card2['value'], {}).get('thai'):
-                        is_match = True
-            
-            if is_match:
-                card1['matched'] = True
-                card2['matched'] = True
-                game_state['matched_pairs'] += 1
-                result_message = "配對成功！"
-            else:
-                result_message = "配對不符，請再試一次"
-        else:
-            result_message = "發生錯誤，請重試"
-    else:
-        result_message = "請選擇第二張卡片"
-    
-    # 檢查遊戲是否結束
-    if game_state['matched_pairs'] >= game_state['total_pairs']:
-        # 計算得分（基於移動次數和時間）
-        end_time = datetime.now()
-        start_time = datetime.fromisoformat(game_state['start_time'])
-        duration = (end_time - start_time).total_seconds()
-        
-        # 基礎分數 + 時間獎勵 + 移動次數獎勵
-        base_score = 1000
-        time_bonus = max(0, 300 - duration) * 2  # 最快時間獎勵
-        move_bonus = max(0, 100 - (game_state['moves'] - game_state['total_pairs']) * 5)  # 最少移動獎勵
-        
-        total_score = int(base_score + time_bonus + move_bonus)
-        game_state['score'] = total_score
-        
-        # 更新用戶總分
-        user_data['score'] += total_score
-        
-        result_message = f"恭喜！遊戲完成！\n得分：{total_score}\n用時：{int(duration)}秒\n移動次數：{game_state['moves']}"
-    
-    return game_state, result_message
-
-def create_matching_game_message(game_state):
-    """創建記憶翻牌遊戲界面"""
-    logger.info("創建翻牌遊戲界面")
-    # 遊戲狀態訊息
-    status_message = TextSendMessage(
-        text=f"記憶翻牌遊戲\n已配對：{game_state['matched_pairs']}/{game_state['total_pairs']}\n移動次數：{game_state['moves']}"
-    )
-    
-    # 創建卡片選單（分成多個按鈕模板，每個最多4個按鈕）
-    card_messages = []
-    cards = game_state['cards']
-    
-    # 每4張卡片一組
-    for i in range(0, len(cards), 4):
-        card_group = cards[i:i+4]
-        actions = []
-        
-        for card in card_group:
-            if card['matched']:
-                # 已配對的卡片顯示實際內容
-                label = f"✓ {card['value']}"
-            elif card.get('flipped'):
-                # 已翻開但未配對的卡片
-                label = f"📖 {card['value']}"
-            else:
-                # 未翻開的卡片
-                label = f"🔒 卡片 {i + card_group.index(card) + 1}"
-            
-            # 只有未翻開且未配對的卡片可點擊
-            if not card['matched'] and not card.get('flipped'):
-                actions.append(MessageAction(
-                    label=label,
-                    text=f"翻牌:{card['id']}"
-                ))
-            else:
-                # LINE不支持禁用按鈕，所以我們仍然添加按鈕但文本相同
-                actions.append(MessageAction(
-                    label=label,
-                    text=f"翻牌:{card['id']}"
-                ))
-        
-        # 確保至少有一個按鈕
-        while len(actions) < 1:
-            actions.append(MessageAction(
-                label="無可用卡片",
-                text="記憶翻牌遊戲"
-            ))
-        
-        # 建立按鈕模板
-        buttons_template = ButtonsTemplate(
-            title=f"卡片 {i+1}-{i+len(card_group)}",
-            text="請選擇要翻開的卡片",
-            actions=actions[:4]  # 最多4個按鈕
-        )
-        
-        card_messages.append(TemplateSendMessage(
-            alt_text=f"卡片選擇 {i+1}-{i+len(card_group)}",
-            template=buttons_template
-        ))
-    
-    # 添加操作按鈕
-    control_template = ButtonsTemplate(
-        title="遊戲控制",
-        text="選擇操作",
-        actions=[
-            MessageAction(label="重新開始", text="記憶翻牌遊戲"),
-            MessageAction(label="返回主選單", text="返回主選單")
-        ]
-    )
-    
-    card_messages.append(TemplateSendMessage(
-        alt_text="遊戲控制",
-        template=control_template
-    ))
-    
-    return [status_message] + card_messages
 # === 學習功能模塊 ===
+
 def show_category_menu():
     """顯示主題選單"""
     logger.info("顯示主題選單")
@@ -652,7 +658,6 @@ def start_dialogue_practice(user_id, dialogue_key=None):
     user_data = user_data_manager.get_user_data(user_id)
     user_data['current_activity'] = 'dialogue_practice'
     
-    # 如果沒有指定對話，隨機
     # 如果沒有指定對話，隨機選擇一個
     if not dialogue_key:
         dialogue_key = random.choice(list(thai_data['dialogues'].keys()))
@@ -724,7 +729,6 @@ def show_learning_progress(user_id):
     progress_report += f"已學習詞彙：{total_words} 個\n"
     progress_report += f"練習次數：{total_practices} 次\n"
     progress_report += f"平均發音評分：{avg_score:.1f}/100\n"
-    progress_report += f"遊戲總分：{user_data.get('score', 0)} 分\n"  # 添加遊戲分數
     progress_report += f"學習連續天數：{user_data['streak']} 天\n\n"
     
     if total_words > 0:
@@ -759,7 +763,6 @@ def show_main_menu():
             QuickReplyButton(action=MessageAction(label='發音練習', text='練習發音')),
             QuickReplyButton(action=MessageAction(label='音調學習', text='音調學習')),
             QuickReplyButton(action=MessageAction(label='對話練習', text='對話練習')),
-            QuickReplyButton(action=MessageAction(label='記憶翻牌遊戲', text='記憶翻牌遊戲')),
             QuickReplyButton(action=MessageAction(label='學習進度', text='學習進度'))
         ]
     )
@@ -768,6 +771,7 @@ def show_main_menu():
         text="🇹🇭 歡迎使用泰語學習系統 🇹🇭\n請選擇您想要的學習模式：",
         quick_reply=quick_reply
     )
+
 # === LINE Bot Webhook 處理 ===
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -841,40 +845,6 @@ def handle_text_message(event):
     elif text == "對話練習":
         messages = start_dialogue_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
-    # 記憶翻牌遊戲
-    elif text == "記憶翻牌遊戲":
-        game_state = init_matching_game(user_id)
-        messages = create_matching_game_message(game_state)
-        line_bot_api.reply_message(event.reply_token, messages)
-    
-    elif text.startswith("翻牌:"):
-        card_id = text[3:]  # 提取卡片ID
-        game_state, result_message = handle_card_flip(user_id, card_id)
-        
-        if game_state:
-            messages = [TextSendMessage(text=result_message)]
-            # 如果遊戲結束，顯示總結訊息
-            if game_state.get('matched_pairs') >= game_state.get('total_pairs'):
-                game_complete_message = ButtonsTemplate(
-                    title="遊戲完成！",
-                    text=f"得分：{game_state.get('score', 0)}",
-                    actions=[
-                        MessageAction(label="再玩一次", text="記憶翻牌遊戲"),
-                        MessageAction(label="返回主選單", text="返回主選單")
-                    ]
-                )
-                messages.append(TemplateSendMessage(alt_text="遊戲完成", template=game_complete_message))
-            else:
-                # 更新遊戲界面
-                messages.extend(create_matching_game_message(game_state))
-            
-            line_bot_api.reply_message(event.reply_token, messages)
-        else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=result_message)
-            )
     
     # 進度與導航控制
     elif text == "下一個詞彙":
@@ -958,6 +928,7 @@ def handle_text_message(event):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
+
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     """處理音頻消息，主要用於發音評估"""
@@ -965,6 +936,7 @@ def handle_audio_message(event):
     user_data = user_data_manager.get_user_data(user_id)
     
     logger.info(f"收到用戶 {user_id} 的音頻訊息")
+    
     # 檢查用戶是否在發音練習中
     if user_data.get('current_activity') == 'echo_practice':
         try:
