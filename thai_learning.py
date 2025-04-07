@@ -1106,24 +1106,25 @@ class MemoryGame:
         return self.get_game_state(), result
     
     def get_game_state(self):
-        """獲取當前遊戲狀態"""
-        elapsed_time = 0
-        if self.start_time:
-            current_time = self.end_time if self.end_time else datetime.now()
-            elapsed_time = (current_time - self.start_time).total_seconds()
-        
-        remaining_time = max(0, self.time_limit - elapsed_time)
-        
-        return {
-            'cards': self.cards,
-            'flipped_cards': [c['id'] for c in self.flipped_cards],
-            'matched_pairs': [[c['id'] for c in pair] for pair in self.matched_pairs],
-            'attempts': self.attempts,
-            'elapsed_time': elapsed_time,
-            'remaining_time': remaining_time,
-            'is_completed': len(self.matched_pairs) * 2 == len(self.cards),
-            'is_timeout': elapsed_time > self.time_limit
-        }
+    """獲取當前遊戲狀態"""
+    elapsed_time = 0
+    if self.start_time:
+        current_time = self.end_time if self.end_time else datetime.now()
+        elapsed_time = (current_time - self.start_time).total_seconds()
+    
+    remaining_time = max(0, self.time_limit - elapsed_time)
+    
+    return {
+        'cards': self.cards,
+        'flipped_cards': [c['id'] for c in self.flipped_cards],
+        'matched_pairs': [[c['id'] for c in pair] for pair in self.matched_pairs],
+        'attempts': self.attempts,
+        'elapsed_time': elapsed_time,
+        'remaining_time': remaining_time,
+        'is_completed': len(self.matched_pairs) * 2 == len(self.cards),
+        'is_timeout': elapsed_time > self.time_limit,
+        'category': self.category  # 添加類別信息
+    }
     
     def get_end_result(self):
         """獲取遊戲結束結果"""
@@ -1291,9 +1292,16 @@ def create_memory_game_board(cards, game_state):
     remaining_time = int(game_state.get('remaining_time', 0))
     
     # 創建遊戲資訊文字
-    category_name = thai_data['categories'][game.category]['name'] if hasattr(game, 'category') and game.category else "未知"
+    # 使用 game_state 中的類別信息而不是依賴 game 變數
+    category_name = "未知"
+    if 'category' in game_state:
+        category = game_state['category']
+        if category in thai_data['categories']:
+            category_name = thai_data['categories'][category]['name']
+    
     game_info = f"🎮 泰語記憶翻牌遊戲 - {category_name}\n⏱️ 剩餘時間: {remaining_time} 秒\n🔄 移動次數: {attempts}\n✅ 已配對: {len(matched_ids)//2}/{len(cards)//2} 組\n\n點擊卡片翻牌，找出配對的詞彙與發音"
     
+
     # 創建卡片按鈕
     card_buttons = []
     
