@@ -988,6 +988,7 @@ class MemoryGame:
         self.start_time = None
         self.end_time = None
         self.category = category
+        self.time_limit = 90  # 設定時間限制為90秒（1分30秒）
         
     def initialize_game(self, category=None):
         """根據類別初始化遊戲卡片"""
@@ -1006,28 +1007,30 @@ class MemoryGame:
         self.cards = []
         card_id = 0
         
-        # 為每個詞彙創建一對卡片（音頻卡和文字卡）
+        # 為每個詞彙創建一對卡片（圖片卡和音頻卡）
         for word in selected_words:
             word_data = thai_data['basic_words'][word]
+            
+            # 添加圖片卡
+            self.cards.append({
+                'id': card_id,
+                'type': 'image',
+                'content': word_data['image_url'],
+                'match_id': card_id + 1,
+                'word': word,
+                'meaning': word,
+                'thai': word_data['thai']
+            })
+            card_id += 1
             
             # 添加音頻卡
             self.cards.append({
                 'id': card_id,
                 'type': 'audio',
                 'content': word_data['audio_url'],
-                'match_id': card_id + 1,
-                'word': word,
-                'thai': word_data['thai']
-            })
-            card_id += 1
-            
-            # 添加文字卡
-            self.cards.append({
-                'id': card_id,
-                'type': 'text',
-                'content': f"{word} ({word_data['thai']})",
                 'match_id': card_id - 1,
                 'word': word,
+                'meaning': word,
                 'thai': word_data['thai']
             })
             card_id += 1
@@ -1054,7 +1057,7 @@ class MemoryGame:
             return None, "卡片不存在"
         
         # 檢查卡片是否已經配對
-        if card_id in [c['id'] for c in self.matched_pairs]:
+        if card_id in [c['id'] for pair in self.matched_pairs for c in pair]:
             logger.warning(f"卡片 {card_id} 已經配對")
             return self.get_game_state(), "卡片已經配對"
         
@@ -1075,7 +1078,7 @@ class MemoryGame:
             # 檢查是否配對
             if card1['match_id'] == card2['id'] and card2['match_id'] == card1['id']:
                 # 配對成功
-                self.matched_pairs.extend(self.flipped_cards)
+                self.matched_pairs.append(self.flipped_cards.copy())
                 result = f"配對成功！{card1['word']} - {card1['thai']}"
                 logger.info(f"卡片配對成功: {card1['id']} 和 {card2['id']}")
             else:
@@ -1087,21 +1090,39 @@ class MemoryGame:
             self.flipped_cards = []
         
         # 檢查遊戲是否結束
-        if len(self.matched_pairs) == len(self.cards):
+        if len(self.matched_pairs) * 2 == len(self.cards):
             self.end_time = datetime.now()
             result = self.get_end_result()
             logger.info("記憶翻牌遊戲結束")
+        
+        # 檢查是否超時
+        elif self.start_time:
+            elapsed_time = (datetime.now() - self.start_time).total_seconds()
+            if elapsed_time > self.time_limit:
+                self.end_time = datetime.now()
+                result = "時間到！" + self.get_end_result()
+                logger.info("記憶翻牌遊戲超時")
         
         return self.get_game_state(), result
     
     def get_game_state(self):
         """獲取當前遊戲狀態"""
+        elapsed_time = 0
+        if self.start_time:
+            current_time = self.end_time if self.end_time else datetime.now()
+            elapsed_time = (current_time - self.start_time).total_seconds()
+        
+        remaining_time = max(0, self.time_limit - elapsed_time)
+        
         return {
             'cards': self.cards,
             'flipped_cards': [c['id'] for c in self.flipped_cards],
-            'matched_pairs': [c['id'] for c in self.matched_pairs],
+            'matched_pairs': [[c['id'] for c in pair] for pair in self.matched_pairs],
             'attempts': self.attempts,
-            'is_completed': len(self.matched_pairs) == len(self.cards)
+            'elapsed_time': elapsed_time,
+            'remaining_time': remaining_time,
+            'is_completed': len(self.matched_pairs) * 2 == len(self.cards),
+            'is_timeout': elapsed_time > self.time_limit
         }
     
     def get_end_result(self):
@@ -1111,18 +1132,29 @@ class MemoryGame:
         
         duration = (self.end_time - self.start_time).total_seconds()
         pairs_count = len(self.cards) // 2
+        matched_count = len(self.matched_pairs)
         
-        # 計算分數 (滿分 100)
-        # 基礎分數：50 分
-        # 嘗試次數獎勵：(pairs_count * 2 - attempts) * 5，最低 0 分
-        # 時間獎勵：最多 25 分，隨著時間增加而減少
-        base_score = 50
-        attempts_score = max(0, (pairs_count * 2 - self.attempts) * 5)
-        time_score = max(0, 25 - int(duration / 10))  # 每 10 秒扣 1 分，最低 0 分
+        # 計算分數和等級
+        if duration > self.time_limit:
+            # 超時情況
+            if matched_count == pairs_count:
+                message = "雖然超時，但你找到了所有配對！"
+                level = "不錯的嘗試！"
+            else:
+                message = f"時間到！你找到了 {matched_count}/{pairs_count} 組配對。"
+                level = "再接再厲！"
+        else:
+            # 未超時情況
+            if duration < 30:  # 30秒內完成
+                level = "太棒了！你的記憶力超群！"
+            elif duration < 60:  # 60秒內完成
+                level = "很好！你的記憶力很強！"
+            else:
+                level = "做得好！繼續練習能提高記憶力！"
+                
+            message = f"遊戲完成！\n配對數量: {matched_count}/{pairs_count} 組\n嘗試次數: {self.attempts} 次\n用時: {int(duration)} 秒"
         
-        total_score = base_score + attempts_score + time_score
-        
-        return f"遊戲完成！\n配對數量: {pairs_count} 對\n嘗試次數: {self.attempts} 次\n用時: {int(duration)} 秒\n總分: {total_score}/100"
+        return f"{message}\n{level}"
 
 # === 記憶翻牌遊戲處理 ===
 def handle_memory_game(user_id, message):
@@ -1153,120 +1185,145 @@ def handle_memory_game(user_id, message):
         )
         
         return TextSendMessage(
-            text="記憶翻牌遊戲：請選擇一個主題開始遊戲",
+            text="🎮 記憶翻牌遊戲\n\n遊戲規則：\n1. 翻開卡片找出配對的圖片和發音\n2. 遊戲時間限制為1分30秒\n3. 完成速度越快評價越高\n\n請選擇一個主題開始遊戲：",
             quick_reply=quick_reply
         )
     
     elif message.startswith("記憶遊戲主題:"):
         category = message.split(":", 1)[1] if ":" in message else ""
         logger.info(f"收到記憶遊戲主題選擇: '{category}'")
-    
-    # 轉換成英文鍵值
-    category_map = {
-        "日常用語": "daily_phrases",
-        "數字": "numbers",
-        "動物": "animals",
-        "食物": "food",
-        "交通工具": "transportation"
-    }
-    logger.info(f"可用的主題映射: {list(category_map.keys())}")
-    
-    if category in category_map:
-        eng_category = category_map[category]
-        logger.info(f"主題映射成功: {category} -> {eng_category}")
         
-        # 檢查 thai_data 是否包含該類別
-        if eng_category in thai_data['categories']:
-            logger.info(f"在 thai_data 中找到類別 {eng_category}")
-            # 初始化遊戲
-            cards = game.initialize_game(eng_category)
+        # 轉換成英文鍵值
+        category_map = {
+            "日常用語": "daily_phrases",
+            "數字": "numbers",
+            "動物": "animals",
+            "食物": "food",
+            "交通工具": "transportation"
+        }
+        logger.info(f"可用的主題映射: {list(category_map.keys())}")
+        
+        if category in category_map:
+            eng_category = category_map[category]
+            logger.info(f"主題映射成功: {category} -> {eng_category}")
             
-            # 創建遊戲畫面
-            return create_memory_game_board(cards, game.get_game_state())
+            # 檢查 thai_data 是否包含該類別
+            if eng_category in thai_data['categories']:
+                logger.info(f"在 thai_data 中找到類別 {eng_category}")
+                # 初始化遊戲
+                cards = game.initialize_game(eng_category)
+                
+                # 創建遊戲畫面
+                return create_memory_game_board(cards, game.get_game_state())
+            else:
+                logger.error(f"在 thai_data 中找不到類別 {eng_category}")
+                return TextSendMessage(text=f"抱歉，在資料中找不到「{category}」類別。請聯繫管理員。")
         else:
-            logger.error(f"在 thai_data 中找不到類別 {eng_category}")
-            return TextSendMessage(text=f"抱歉，在資料中找不到「{category}」類別。請聯繫管理員。")
-    else:
-        logger.warning(f"無法識別主題: {category}")
-        return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
+            logger.warning(f"無法識別主題: {category}")
+            return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
     
-    if message.startswith("翻牌:"):
-        card_id = int(message[3:])
-        game_state, result = game.flip_card(card_id)
-        
-        # 如果遊戲還在進行中
-        if game_state and not game_state['is_completed']:
-            # 返回更新後的遊戲畫面
-            messages = [
-                TextSendMessage(text=result),
-                create_memory_game_board(game.cards, game_state)
-            ]
-            return messages
-        elif game_state and game_state['is_completed']:
-            # 遊戲結束，顯示結果
-            messages = [
-                TextSendMessage(text=result),
-                TextSendMessage(
-                    text="遊戲結束！要再玩一次嗎？",
-                    quick_reply=QuickReply(
-                        items=[
-                            QuickReplyButton(action=MessageAction(label='再玩一次', text='開始記憶遊戲')),
-                            QuickReplyButton(action=MessageAction(label='返回主選單', text='返回主選單'))
-                        ]
+    elif message.startswith("翻牌:"):
+        try:
+            card_id = int(message.split(":", 1)[1]) if ":" in message else -1
+            game_state, result = game.flip_card(card_id)
+            
+            # 如果遊戲還在進行中且沒有超時
+            if game_state and not game_state.get('is_completed', False) and not game_state.get('is_timeout', False):
+                # 返回更新後的遊戲畫面
+                messages = [
+                    TextSendMessage(text=result),
+                    create_memory_game_board(game.cards, game_state)
+                ]
+                return messages
+            else:
+                # 遊戲結束或超時，顯示結果
+                messages = [
+                    TextSendMessage(text=result),
+                    TextSendMessage(
+                        text="遊戲結束！要再玩一次嗎？",
+                        quick_reply=QuickReply(
+                            items=[
+                                QuickReplyButton(action=MessageAction(label='再玩一次', text='開始記憶遊戲')),
+                                QuickReplyButton(action=MessageAction(label='返回主選單', text='返回主選單'))
+                            ]
+                        )
                     )
-                )
-            ]
-            return messages
+                ]
+                return messages
+        except Exception as e:
+            logger.error(f"處理翻牌請求時發生錯誤: {str(e)}")
+            return TextSendMessage(text=f"處理翻牌請求時發生錯誤: {str(e)}\n請重試或選擇「返回主選單」。")
+    
+    elif message.startswith("播放音頻:"):
+        word = message.split(":", 1)[1] if ":" in message else ""
+        if word in thai_data['basic_words']:
+            word_data = thai_data['basic_words'][word]
+            if 'audio_url' in word_data and word_data['audio_url']:
+                # 獲取遊戲狀態
+                game_state = game.get_game_state()
+                
+                # 發送音頻後顯示遊戲畫面
+                messages = [
+                    AudioSendMessage(
+                        original_content_url=word_data['audio_url'],
+                        duration=3000  # 假設音訊長度為3秒
+                    ),
+                    create_memory_game_board(game.cards, game_state)
+                ]
+                return messages
+        
+        return TextSendMessage(text="抱歉，無法播放該音頻。")
     
     # 默認回傳
     return TextSendMessage(text="請選擇「開始記憶遊戲」開始新的遊戲")
 
 def create_memory_game_board(cards, game_state):
     """創建記憶翻牌遊戲畫面"""
-    # 建立卡片顯示
+    # 從遊戲狀態獲取資訊
+    attempts = game_state['attempts']
+    
+    # 獲取配對和翻牌資訊
+    matched_ids = []
+    for pair in game_state.get('matched_pairs', []):
+        matched_ids.extend(pair)
+    flipped_ids = game_state.get('flipped_cards', [])
+    
+    remaining_time = int(game_state.get('remaining_time', 0))
+    
+    # 創建遊戲資訊文字
+    category_name = thai_data['categories'][game.category]['name'] if hasattr(game, 'category') and game.category else "未知"
+    game_info = f"🎮 泰語記憶翻牌遊戲 - {category_name}\n⏱️ 剩餘時間: {remaining_time} 秒\n🔄 移動次數: {attempts}\n✅ 已配對: {len(matched_ids)//2}/{len(cards)//2} 組\n\n點擊卡片翻牌，找出配對的詞彙與發音"
+    
+    # 創建卡片按鈕
     card_buttons = []
-    matched_cards = game_state['matched_pairs']
-    flipped_cards = game_state['flipped_cards']
     
     # 根據卡片狀態決定顯示内容
     for card in cards:
         card_id = card['id']
+        is_flipped = card_id in flipped_ids
+        is_matched = card_id in matched_ids
         
-        # 已配對或翻開的卡片顯示內容
-        if card_id in matched_cards or card_id in flipped_cards:
-            if card['type'] == 'audio':
-                # 音頻卡片
-                card_buttons.append(
-                    QuickReplyButton(
-                        action=MessageAction(
-                            label=f"🔊 {card['word']}",
-                            text=f"播放音頻:{card['word']}"
-                        )
-                    )
-                )
-            else:
-                # 文字卡片
-                card_buttons.append(
-                    QuickReplyButton(
-                        action=MessageAction(
-                            label=card['content'][:12],  # 限制長度
-                            text=f"已翻開:{card_id}"
-                        )
-                    )
-                )
+        if is_flipped or is_matched:
+            # 已翻開的卡片
+            if card['type'] == 'image':
+                label = f"🖼️ {card['word']}"
+                action = f"已翻開:{card_id}"
+            else:  # audio
+                label = f"🎵 {card['thai']}"
+                action = f"播放音頻:{card['word']}"
         else:
             # 未翻開的卡片
-            card_buttons.append(
-                QuickReplyButton(
-                    action=MessageAction(
-                        label=f"卡片 {card_id}",
-                        text=f"翻牌:{card_id}"
-                    )
+            label = f"🎴 {card_id+1}"
+            action = f"翻牌:{card_id}"
+        
+        card_buttons.append(
+            QuickReplyButton(
+                action=MessageAction(
+                    label=label[:12],  # LINE 按鈕標籤長度限制
+                    text=action
                 )
             )
-    
-    # 創建遊戲資訊文字
-    game_info = f"記憶翻牌遊戲 - 嘗試次數: {game_state['attempts']}\n已找到: {len(matched_cards)//2}/{len(cards)//2} 對\n點擊卡片翻牌，找出配對的詞彙與發音"
+        )
     
     # 返回遊戲畫面
     return TextSendMessage(
