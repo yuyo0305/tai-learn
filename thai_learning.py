@@ -1158,24 +1158,37 @@ def handle_memory_game(user_id, message):
         )
     
     elif message.startswith("記憶遊戲主題:"):
-        category = message[8:]  # 取出主題名稱
-        # 轉換成英文鍵值
-        category_map = {
-            "日常用語": "daily_phrases",
-            "數字": "numbers",
-            "動物": "animals",
-            "食物": "food",
-            "交通工具": "transportation"
-        }
-        if category in category_map:
-            eng_category = category_map[category]
+    category = message[8:]  # 取出主題名稱
+    logger.info(f"收到記憶遊戲主題選擇: '{category}'")
+    
+    # 轉換成英文鍵值
+    category_map = {
+        "日常用語": "daily_phrases",
+        "數字": "numbers",
+        "動物": "animals",
+        "食物": "food",
+        "交通工具": "transportation"
+    }
+    logger.info(f"可用的主題映射: {list(category_map.keys())}")
+    
+    if category in category_map:
+        eng_category = category_map[category]
+        logger.info(f"主題映射成功: {category} -> {eng_category}")
+        
+        # 檢查 thai_data 是否包含該類別
+        if eng_category in thai_data['categories']:
+            logger.info(f"在 thai_data 中找到類別 {eng_category}")
             # 初始化遊戲
             cards = game.initialize_game(eng_category)
             
             # 創建遊戲畫面
             return create_memory_game_board(cards, game.get_game_state())
         else:
-            return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
+            logger.error(f"在 thai_data 中找不到類別 {eng_category}")
+            return TextSendMessage(text=f"抱歉，在資料中找不到「{category}」類別。請聯繫管理員。")
+    else:
+        logger.warning(f"無法識別主題: {category}")
+        return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
     
     elif message.startswith("翻牌:"):
         card_id = int(message[3:])
