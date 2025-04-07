@@ -1158,8 +1158,8 @@ def handle_memory_game(user_id, message):
         )
     
     elif message.startswith("記憶遊戲主題:"):
-        category = message[8:]  # 取出主題名稱
-    logger.info(f"收到記憶遊戲主題選擇: '{category}'")
+        category = message.split(":", 1)[1] if ":" in message else ""
+        logger.info(f"收到記憶遊戲主題選擇: '{category}'")
     
     # 轉換成英文鍵值
     category_map = {
