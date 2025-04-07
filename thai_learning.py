@@ -79,7 +79,7 @@ def upload_file_to_gcs(file_data, destination_blob_name, content_type="audio/wav
         # 上傳數據
         if isinstance(file_data, bytes):
             blob.upload_from_string(file_data, content_type=content_type)
-        # Remove this `else` as it is not paired with any preceding condition
+        else:
             blob.upload_from_file(file_data)
         
         # 設置為公開訪問
@@ -568,7 +568,7 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
                 "completeness_score": completeness_score,
                 "fluency_score": fluency_score
             }
-        # Remove this `else` as it is not paired with any preceding condition
+        else:
             logger.warning(f"語音識別失敗，原因: {result.reason}")
             return {
                 "success": False,
@@ -1190,9 +1190,8 @@ def handle_memory_game(user_id, message):
         logger.warning(f"無法識別主題: {category}")
         return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
     
-    else:
-        if message.startswith("翻牌:"):
-            card_id = int(message[3:])
+    if message.startswith("翻牌:"):
+        card_id = int(message[3:])
         game_state, result = game.flip_card(card_id)
         
         # 如果遊戲還在進行中
