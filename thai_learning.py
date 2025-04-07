@@ -79,7 +79,7 @@ def upload_file_to_gcs(file_data, destination_blob_name, content_type="audio/wav
         # 上傳數據
         if isinstance(file_data, bytes):
             blob.upload_from_string(file_data, content_type=content_type)
-        else:
+        # Remove this `else` as it is not paired with any preceding condition
             blob.upload_from_file(file_data)
         
         # 設置為公開訪問
@@ -1158,7 +1158,7 @@ def handle_memory_game(user_id, message):
         )
     
     elif message.startswith("記憶遊戲主題:"):
-    category = message[8:]  # 取出主題名稱
+        category = message[8:]  # 取出主題名稱
     logger.info(f"收到記憶遊戲主題選擇: '{category}'")
     
     # 轉換成英文鍵值
@@ -1190,8 +1190,9 @@ def handle_memory_game(user_id, message):
         logger.warning(f"無法識別主題: {category}")
         return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
     
-    elif message.startswith("翻牌:"):
-        card_id = int(message[3:])
+    else:
+        if message.startswith("翻牌:"):
+            card_id = int(message[3:])
         game_state, result = game.flip_card(card_id)
         
         # 如果遊戲還在進行中
