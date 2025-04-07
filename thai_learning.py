@@ -1106,26 +1106,26 @@ class MemoryGame:
         return self.get_game_state(), result
     
     def get_game_state(self):
-    """獲取當前遊戲狀態"""
-    elapsed_time = 0
-    if self.start_time:
-        current_time = self.end_time if self.end_time else datetime.now()
-        elapsed_time = (current_time - self.start_time).total_seconds()
-    
-    remaining_time = max(0, self.time_limit - elapsed_time)
-    
-    return {
-        'cards': self.cards,
-        'flipped_cards': [c['id'] for c in self.flipped_cards],
-        'matched_pairs': [[c['id'] for c in pair] for pair in self.matched_pairs],
-        'attempts': self.attempts,
-        'elapsed_time': elapsed_time,
-        'remaining_time': remaining_time,
-        'is_completed': len(self.matched_pairs) * 2 == len(self.cards),
-        'is_timeout': elapsed_time > self.time_limit,
-        'category': self.category  # 添加類別信息
-    }
-    
+        """獲取當前遊戲狀態"""
+        elapsed_time = 0
+        if self.start_time:
+            current_time = self.end_time if self.end_time else datetime.now()
+            elapsed_time = (current_time - self.start_time).total_seconds()
+        
+        remaining_time = max(0, self.time_limit - elapsed_time)
+        
+        return {
+            'cards': self.cards,
+            'flipped_cards': [c['id'] for c in self.flipped_cards],
+            'matched_pairs': [[c['id'] for c in pair] for pair in self.matched_pairs],
+            'attempts': self.attempts,
+            'elapsed_time': elapsed_time,
+            'remaining_time': remaining_time,
+            'is_completed': len(self.matched_pairs) * 2 == len(self.cards),
+            'is_timeout': elapsed_time > self.time_limit,
+            'category': self.category  # 添加類別信息
+        }
+
     def get_end_result(self):
         """獲取遊戲結束結果"""
         if not self.end_time:
