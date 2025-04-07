@@ -568,7 +568,7 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
                 "completeness_score": completeness_score,
                 "fluency_score": fluency_score
             }
-        else:
+        # Remove this `else` as it is not paired with any preceding condition
             logger.warning(f"語音識別失敗，原因: {result.reason}")
             return {
                 "success": False,
