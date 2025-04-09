@@ -1,3 +1,6 @@
+if 'temp' not in user_data_manager.users:
+    user_data_manager.users['temp'] = {'game_state': {}}
+    
 # === 第一部分：初始化和基礎設定 ===
 import os
 import uuid
@@ -976,6 +979,11 @@ def show_main_menu():
         quick_reply=quick_reply
     )
 # === 第五部分：記憶翻牌遊戲和訊息處理 ===
+from linebot.models import (
+    FlexSendMessage, BubbleContainer, BoxComponent, TextComponent, ButtonComponent,
+    ImageComponent, IconComponent, SeparatorComponent, SpacerComponent,
+    URIAction, MessageAction, PostbackAction
+)
 
 # === 記憶翻牌遊戲類 ===
 class MemoryGame:
@@ -1114,6 +1122,11 @@ class MemoryGame:
         
         remaining_time = max(0, self.time_limit - elapsed_time)
         
+        # 計算類別名稱
+        category_name = ""
+        if self.category and self.category in thai_data['categories']:
+            category_name = thai_data['categories'][self.category]['name']
+        
         return {
             'cards': self.cards,
             'flipped_cards': [c['id'] for c in self.flipped_cards],
@@ -1123,9 +1136,10 @@ class MemoryGame:
             'remaining_time': remaining_time,
             'is_completed': len(self.matched_pairs) * 2 == len(self.cards),
             'is_timeout': elapsed_time > self.time_limit,
-            'category': self.category  # 添加類別信息
+            'category': self.category,
+            'category_name': category_name
         }
-
+    
     def get_end_result(self):
         """獲取遊戲結束結果"""
         if not self.end_time:
@@ -1214,8 +1228,8 @@ def handle_memory_game(user_id, message):
                 # 初始化遊戲
                 cards = game.initialize_game(eng_category)
                 
-                # 創建遊戲畫面
-                return create_memory_game_board(cards, game.get_game_state())
+                # 創建遊戲畫面 (使用 Flex Message)
+                return create_flex_memory_game(cards, game.get_game_state())
             else:
                 logger.error(f"在 thai_data 中找不到類別 {eng_category}")
                 return TextSendMessage(text=f"抱歉，在資料中找不到「{category}」類別。請聯繫管理員。")
@@ -1228,12 +1242,18 @@ def handle_memory_game(user_id, message):
             card_id = int(message.split(":", 1)[1]) if ":" in message else -1
             game_state, result = game.flip_card(card_id)
             
+            # 儲存臨時數據用於訪問遊戲結果
+            temp_data = user_data_manager.get_user_data('temp')
+            if 'game_state' not in temp_data:
+                temp_data['game_state'] = {}
+            temp_data['game_state']['memory_game'] = game
+            
             # 如果遊戲還在進行中且沒有超時
             if game_state and not game_state.get('is_completed', False) and not game_state.get('is_timeout', False):
-                # 返回更新後的遊戲畫面
+                # 返回更新後的遊戲畫面 (使用 Flex Message)
                 messages = [
                     TextSendMessage(text=result),
-                    create_memory_game_board(game.cards, game_state)
+                    create_flex_memory_game(game.cards, game_state)
                 ]
                 return messages
             else:
@@ -1269,7 +1289,7 @@ def handle_memory_game(user_id, message):
                         original_content_url=word_data['audio_url'],
                         duration=3000  # 假設音訊長度為3秒
                     ),
-                    create_memory_game_board(game.cards, game_state)
+                    create_flex_memory_game(game.cards, game_state)
                 ]
                 return messages
         
@@ -1338,6 +1358,332 @@ def create_memory_game_board(cards, game_state):
         text=game_info,
         quick_reply=QuickReply(items=card_buttons[:13])  # LINE 限制 13 個 QuickReply 按鈕
     )
+
+def create_flex_memory_game(cards, game_state):
+    """創建 Flex Message 的記憶翻牌遊戲界面"""
+    # 獲取遊戲狀態數據
+    attempts = game_state.get('attempts', 0)
+    remaining_time = int(game_state.get('remaining_time', 0))
+    category_name = game_state.get('category_name', '未知')
+    is_completed = game_state.get('is_completed', False)
+    is_timeout = game_state.get('is_timeout', False)
+    
+    # 獲取已匹配和已翻開的卡片
+    matched_ids = []
+    for pair in game_state.get('matched_pairs', []):
+        matched_ids.extend(pair)
+    flipped_ids = game_state.get('flipped_cards', [])
+    
+    # 建立 Flex Message 容器
+    bubbles = []
+    
+    # 1. 遊戲信息氣泡
+    info_bubble = {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "泰語記憶翻牌遊戲",
+                    "weight": "bold",
+                    "size": "xl",
+                    "color": "#ffffff"
+                },
+                {
+                    "type": "text",
+                    "text": category_name,
+                    "size": "md",
+                    "color": "#ffffff"
+                }
+            ],
+            "backgroundColor": "#4A86E8",
+            "paddingBottom": "10px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "⏱️ 剩餘時間:",
+                            "size": "sm",
+                            "color": "#555555",
+                            "flex": 2
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{remaining_time} 秒",
+                            "size": "sm",
+                            "color": "#111111",
+                            "flex": 1
+                        }
+                    ]
+                },
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "🔄 移動次數:",
+                            "size": "sm",
+                            "color": "#555555",
+                            "flex": 2
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{attempts}",
+                            "size": "sm",
+                            "color": "#111111",
+                            "flex": 1
+                        }
+                    ],
+                    "margin": "sm"
+                },
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "✅ 已配對:",
+                            "size": "sm",
+                            "color": "#555555",
+                            "flex": 2
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{len(matched_ids)//2}/{len(cards)//2} 組",
+                            "size": "sm",
+                            "color": "#111111",
+                            "flex": 1
+                        }
+                    ],
+                    "margin": "sm"
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "翻開卡片找出配對的圖片和發音",
+                    "wrap": True,
+                    "size": "xs",
+                    "margin": "sm",
+                    "color": "#888888",
+                    "align": "center"
+                }
+            ]
+        }
+    }
+    
+    bubbles.append(info_bubble)
+    
+    # 2. 遊戲結束氣泡 (如果適用)
+    if is_completed or is_timeout:
+        # 獲取結束訊息
+        game = next((g for g in [user_data_manager.get_user_data('temp')['game_state'].get('memory_game')] if g), None)
+        end_message = game.get_end_result() if game else "遊戲結束！"
+        
+        end_bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "遊戲結束",
+                        "weight": "bold",
+                        "size": "xl",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": end_message,
+                        "wrap": True,
+                        "margin": "md"
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "action": {
+                            "type": "message",
+                            "label": "再玩一次",
+                            "text": "開始記憶遊戲"
+                        },
+                        "color": "#1DB446"
+                    },
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "message",
+                            "label": "返回主選單",
+                            "text": "返回主選單"
+                        }
+                    }
+                ]
+            }
+        }
+        
+        bubbles.append(end_bubble)
+    
+    # 3. 卡片區域氣泡 (分兩行)
+    card_rows = [[], []]
+    
+    for i, card in enumerate(cards):
+        row_index = i // 5  # 每行5張卡片
+        if row_index < 2:  # 限制最多2行 (10張卡片)
+            card_rows[row_index].append(card)
+    
+    for row_index, row_cards in enumerate(card_rows):
+        card_contents = []
+        
+        for card in row_cards:
+            card_id = card['id']
+            is_matched = card_id in matched_ids
+            is_flipped = card_id in flipped_ids
+            
+            # 創建卡片框
+            card_box = None
+            
+            if is_matched or is_flipped:
+                # 已翻開或已配對的卡片
+                if card['type'] == 'image':
+                    # 圖片卡
+                    card_box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "width": "60px",
+                        "height": "80px",
+                        "backgroundColor": "#E6F5FF",
+                        "cornerRadius": "4px",
+                        "borderWidth": "1px",
+                        "borderColor": "#AAAAAA",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "🖼️",
+                                "size": "lg",
+                                "align": "center"
+                            },
+                            {
+                                "type": "text",
+                                "text": card['word'],
+                                "size": "xxs",
+                                "align": "center",
+                                "wrap": True,
+                                "maxLines": 2
+                            }
+                        ]
+                    }
+                else:
+                    # 音頻卡
+                    card_box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "width": "60px",
+                        "height": "80px",
+                        "backgroundColor": "#FFF4E6",
+                        "cornerRadius": "4px",
+                        "borderWidth": "1px",
+                        "borderColor": "#AAAAAA",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "🎵",
+                                "size": "lg",
+                                "align": "center"
+                            },
+                            {
+                                "type": "text",
+                                "text": card['thai'],
+                                "size": "xxs",
+                                "align": "center",
+                                "wrap": True,
+                                "maxLines": 2
+                            }
+                        ],
+                        "action": {
+                            "type": "message",
+                            "text": f"播放音頻:{card['word']}"
+                        }
+                    }
+            else:
+                # 未翻開的卡片
+                card_box = {
+                    "type": "box",
+                    "layout": "vertical",
+                    "width": "60px",
+                    "height": "80px",
+                    "backgroundColor": "#4A86E8",
+                    "cornerRadius": "4px",
+                    "borderWidth": "1px",
+                    "borderColor": "#0B5ED7",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "🎴",
+                            "color": "#FFFFFF",
+                            "align": "center",
+                            "gravity": "center",
+                            "size": "xl"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{card_id+1}",
+                            "color": "#FFFFFF",
+                            "align": "center",
+                            "size": "sm"
+                        }
+                    ],
+                    "action": {
+                        "type": "message",
+                        "text": f"翻牌:{card_id}"
+                    }
+                }
+            
+            card_contents.append(card_box)
+        
+        # 添加卡片行
+        row_bubble = {
+            "type": "bubble",
+            "size": "kilo",
+            "body": {
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "md",
+                "contents": card_contents,
+                "justifyContent": "space-around",
+                "paddingAll": "10px"
+            }
+        }
+        
+        bubbles.append(row_bubble)
+    
+    # 創建 Flex 輪播消息
+    flex_message = {
+        "type": "carousel",
+        "contents": bubbles
+    }
+    
+    return FlexSendMessage(alt_text="泰語記憶翻牌遊戲", contents=flex_message)
 
 # === 文字訊息處理 ===
 @handler.add(MessageEvent, message=TextMessage)
@@ -1475,7 +1821,13 @@ def handle_text_message(event):
 
 # === 主程序入口 ===
 if __name__ == "__main__":
+    # 確保有一個臨時用戶數據用於存儲遊戲狀態
+    if 'temp' not in user_data_manager.users:
+        user_data_manager.users['temp'] = {'game_state': {}}
+    
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"應用啟動在端口 {port}")
     app.run(host='0.0.0.0', port=port)
+    
+    #
