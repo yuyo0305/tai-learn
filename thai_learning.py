@@ -1062,20 +1062,29 @@ class MemoryGame:
         card = next((c for c in self.cards if c['id'] == card_id), None)
         if not card:
             logger.warning(f"找不到卡片 ID: {card_id}")
-            return None, "卡片不存在"
+            return None, "卡片不存在", False, None
         
         # 檢查卡片是否已經配對
         if card_id in [c['id'] for pair in self.matched_pairs for c in pair]:
             logger.warning(f"卡片 {card_id} 已經配對")
-            return self.get_game_state(), "卡片已經配對"
+            return self.get_game_state(), "卡片已經配對", False, None
         
         # 檢查卡片是否已經翻轉
         if card_id in [c['id'] for c in self.flipped_cards]:
             logger.warning(f"卡片 {card_id} 已經翻轉")
-            return self.get_game_state(), "卡片已經翻轉"
+            return self.get_game_state(), "卡片已經翻轉", False, None
         
         # 添加到翻轉卡片列表
         self.flipped_cards.append(card)
+        
+        # 檢查是否需要播放音頻
+        should_play_audio = False
+        audio_url = None
+        if card['type'] == 'audio':
+            should_play_audio = True
+            word = card['word']
+            if word in thai_data['basic_words'] and 'audio_url' in thai_data['basic_words'][word]:
+                audio_url = thai_data['basic_words'][word]['audio_url']
         
         # 如果翻轉了兩張卡片，檢查是否匹配
         result = "繼續遊戲"
@@ -1111,7 +1120,7 @@ class MemoryGame:
                 result = "時間到！" + self.get_end_result()
                 logger.info("記憶翻牌遊戲超時")
         
-        return self.get_game_state(), result
+        return self.get_game_state(), result, should_play_audio, audio_url
     
     def get_game_state(self):
         """獲取當前遊戲狀態"""
@@ -1239,8 +1248,8 @@ def handle_memory_game(user_id, message):
     
     elif message.startswith("翻牌:"):
         try:
-            card_id = int(message.split(":", 1)[1]) if ":" in message else -1
-            game_state, result = game.flip_card(card_id)
+            card_id = int(message.split(":")[1]) if ":" in message else -1
+            game_state, result, should_play_audio, audio_url = game.flip_card(card_id)
             
             # 儲存臨時數據用於訪問遊戲結果
             temp_data = user_data_manager.get_user_data('temp')
@@ -1248,18 +1257,29 @@ def handle_memory_game(user_id, message):
                 temp_data['game_state'] = {}
             temp_data['game_state']['memory_game'] = game
             
+            # 準備回應訊息
+            messages = []
+            
+            # 添加文字結果
+            messages.append(TextSendMessage(text=result))
+            
+            # 如果需要播放音頻，添加音頻消息
+            if should_play_audio and audio_url:
+                messages.append(
+                    AudioSendMessage(
+                        original_content_url=audio_url,
+                        duration=3000  # 假設音訊長度為3秒
+                    )
+                )
+            
             # 如果遊戲還在進行中且沒有超時
             if game_state and not game_state.get('is_completed', False) and not game_state.get('is_timeout', False):
-                # 返回更新後的遊戲畫面 (使用 Flex Message)
-                messages = [
-                    TextSendMessage(text=result),
-                    create_flex_memory_game(game.cards, game_state)
-                ]
+                # 返回更新後的遊戲畫面
+                messages.append(create_flex_memory_game(game.cards, game_state))
                 return messages
             else:
                 # 遊戲結束或超時，顯示結果
-                messages = [
-                    TextSendMessage(text=result),
+                messages.append(
                     TextSendMessage(
                         text="遊戲結束！要再玩一次嗎？",
                         quick_reply=QuickReply(
@@ -1269,7 +1289,7 @@ def handle_memory_game(user_id, message):
                             ]
                         )
                     )
-                ]
+                )
                 return messages
         except Exception as e:
             logger.error(f"處理翻牌請求時發生錯誤: {str(e)}")
@@ -1566,7 +1586,8 @@ def create_flex_memory_game(cards, game_state):
             if is_matched or is_flipped:
                 # 已翻開或已配對的卡片
                 if card['type'] == 'image':
-                    # 圖片卡
+                    # 圖片卡 - 使用實際圖片
+                    word_data = thai_data['basic_words'][card['word']]
                     card_box = {
                         "type": "box",
                         "layout": "vertical",
@@ -1578,10 +1599,11 @@ def create_flex_memory_game(cards, game_state):
                         "borderColor": "#AAAAAA",
                         "contents": [
                             {
-                                "type": "text",
-                                "text": "🖼️",
-                                "size": "lg",
-                                "align": "center"
+                                "type": "image",
+                                "url": word_data['image_url'],
+                                "size": "full",
+                                "aspectMode": "cover",
+                                "aspectRatio": "1:1"
                             },
                             {
                                 "type": "text",
@@ -1589,12 +1611,15 @@ def create_flex_memory_game(cards, game_state):
                                 "size": "xxs",
                                 "align": "center",
                                 "wrap": True,
-                                "maxLines": 2
+                                "maxLines": 2,
+                                "color": "#111111",
+                                "backgroundColor": "#FFFFFF",
+                                "offsetBottom": "0px"
                             }
                         ]
                     }
                 else:
-                    # 音頻卡
+                    # 音頻卡 - 添加播放按鈕
                     card_box = {
                         "type": "box",
                         "layout": "vertical",
@@ -1606,18 +1631,25 @@ def create_flex_memory_game(cards, game_state):
                         "borderColor": "#AAAAAA",
                         "contents": [
                             {
-                                "type": "text",
-                                "text": "🎵",
-                                "size": "lg",
-                                "align": "center"
-                            },
-                            {
-                                "type": "text",
-                                "text": card['thai'],
-                                "size": "xxs",
-                                "align": "center",
-                                "wrap": True,
-                                "maxLines": 2
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": "🎵",
+                                        "size": "lg",
+                                        "align": "center",
+                                        "color": "#FF6B6E"
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": card['thai'],
+                                        "size": "xxs",
+                                        "align": "center",
+                                        "wrap": True,
+                                        "maxLines": 2
+                                    }
+                                ]
                             }
                         ],
                         "action": {
@@ -1653,7 +1685,7 @@ def create_flex_memory_game(cards, game_state):
                             "size": "sm"
                         }
                     ],
-                    "action": {
+"action": {
                         "type": "message",
                         "text": f"翻牌:{card_id}"
                     }
@@ -1818,7 +1850,6 @@ def handle_text_message(event):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
-
 
     # 主程序入口 (放在最後)
 if __name__ == "__main__":
