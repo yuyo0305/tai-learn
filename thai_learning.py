@@ -1,6 +1,8 @@
-if 'temp' not in user_data_manager.users:
-    user_data_manager.users['temp'] = {'game_state': {}}
-    
+=== 主程序入口 ===
+if __name__ == "__main__":
+    # 確保有一個臨時用戶數據用於存儲遊戲狀態
+    if 'temp' not in user_data_manager.users:
+        user_data_manager.users['temp'] = {'game_state': {}}
 # === 第一部分：初始化和基礎設定 ===
 import os
 import uuid
@@ -144,6 +146,9 @@ def callback():
 class UserData:
     def __init__(self):
         self.users = {}
+        # 添加臨時用戶數據存儲
+        self.users['temp'] = {'game_state': {}}
+        logger.info("初始化用戶數據管理器")
         # 在實際應用中，應該使用資料庫存儲這些數據
         logger.info("初始化用戶數據管理器")
         
@@ -1819,11 +1824,7 @@ def handle_text_message(event):
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
 
-# === 主程序入口 ===
-if __name__ == "__main__":
-    # 確保有一個臨時用戶數據用於存儲遊戲狀態
-    if 'temp' not in user_data_manager.users:
-        user_data_manager.users['temp'] = {'game_state': {}}
+
     
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
     port = int(os.environ.get('PORT', 5000))
