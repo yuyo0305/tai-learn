@@ -1,8 +1,3 @@
-=== 主程序入口 ===
-if __name__ == "__main__":
-    # 確保有一個臨時用戶數據用於存儲遊戲狀態
-    if 'temp' not in user_data_manager.users:
-        user_data_manager.users['temp'] = {'game_state': {}}
 # === 第一部分：初始化和基礎設定 ===
 import os
 import uuid
@@ -1825,10 +1820,11 @@ def handle_text_message(event):
         )
 
 
-    
+    # 主程序入口 (放在最後)
+if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"應用啟動在端口 {port}")
     app.run(host='0.0.0.0', port=port)
     
-    #
+    
