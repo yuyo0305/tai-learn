@@ -1013,7 +1013,7 @@ class MemoryGame:
         
         # 初始化卡片清單
         self.cards = []
-        card_id = 0
+        card_id = 1
         
         # 為每個詞彙創建一對卡片（圖片卡和音頻卡）
         for word in selected_words:
@@ -1593,10 +1593,7 @@ def create_flex_memory_game(cards, game_state, user_id):
             if is_matched or is_flipped:
                 # 已翻開或已配對的卡片
                 if card['type'] == 'image':
-                    # 檢查詞彙是否存在於 thai_data 中
-                    if card['word'] in thai_data['basic_words'] and 'image_url' in thai_data['basic_words'][card['word']]:
-                        word_data = thai_data['basic_words'][card['word']]
-                        image_url = word_data['image_url']
+                        image_url = card['content']
                         
                         logger.info(f"顯示圖片卡: 詞彙={card['word']}, 圖片URL={image_url}")
                         
@@ -1702,10 +1699,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                     
                     # 自動發送音頻播放消息（如果是剛翻開的卡片）
                     if is_flipped and not is_matched and card['type'] == 'audio':
-                        word = card['word']
-                        if word in thai_data['basic_words'] and 'audio_url' in thai_data['basic_words'][word]:
-                            audio_url = thai_data['basic_words'][word]['audio_url']
-                            logger.info(f"自動播放音頻卡片: 詞彙={word}, 音頻URL={audio_url}")
+                            audio_url = card['content']
                             # 使用 push_message 發送音頻消息（不需要等待用戶點擊）
                             try:
                                 line_bot_api.push_message(
