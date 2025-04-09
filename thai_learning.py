@@ -1628,7 +1628,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                                 }
                             ]
                         }
-                    else:
+                else:
                         # 圖片URL不存在或詞彙不存在時的備用顯示
                         logger.warning(f"詞彙圖片URL不存在: {card['word']}")
                         card_box = {
@@ -1657,7 +1657,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                                 }
                             ]
                         }
-                else:
+            else:
                     # 音頻卡 - 添加播放按鈕
                     card_box = {
                         "type": "box",
@@ -1711,7 +1711,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                                 )
                             except Exception as e:
                                 logger.error(f"發送音頻消息失敗: {str(e)}")
-            else:
+        else:
                 # 未翻開的卡片
                 # 修正: 顯示的卡片編號為 card_id+1，但在翻牌操作中使用的是實際的 card_id
                 # 因此發送的訊息需要包含 card_id+1
@@ -1748,7 +1748,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                     }
                 }
             
-            card_contents.append(card_box)
+        card_contents.append(card_box)
         
         # 添加卡片行
         row_bubble = {
