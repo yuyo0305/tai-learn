@@ -981,8 +981,7 @@ def show_main_menu():
 # === 第五部分：記憶翻牌遊戲和訊息處理 ===
 from linebot.models import (
     FlexSendMessage, BubbleContainer, BoxComponent, TextComponent, ButtonComponent,
-    ImageComponent, IconComponent, SeparatorComponent, SpacerComponent,
-    URIAction, MessageAction, PostbackAction
+    ImageComponent, IconComponent, SeparatorComponent,URIAction, MessageAction, PostbackAction
 )
 
 # === 記憶翻牌遊戲類 ===
