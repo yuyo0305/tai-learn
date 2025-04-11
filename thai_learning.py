@@ -1393,7 +1393,7 @@ def create_memory_game_board(cards, game_state):
 
 def create_flex_memory_game(cards, game_state, user_id):
     """創建 Flex Message 的記憶翻牌遊戲界面"""
-    # 初始化 bubbles
+    # 初始化 bubbles 為空列表
     bubbles = []
 
     try:
@@ -1492,250 +1492,48 @@ def create_flex_memory_game(cards, game_state, user_id):
             }
             bubbles.append(end_bubble)
 
-        # 限制 bubbles 數量
-        bubbles = bubbles[:10]
-        
-        logger.info(f"創建 Flex Message，Bubble 數量: {len(bubbles)}")
-        
-        flex_message = {
-            "type": "carousel",
-            "contents": bubbles
-        }
-        
-        return FlexSendMessage(alt_text="泰語記憶翻牌遊戲", contents=flex_message)
+        # 3. 卡片氣泡
+        card_rows = [[], []]
+        for i, card in enumerate(cards):
+            row_index = i // 5
+            if row_index < 2:
+                card_rows[row_index].append(card)
 
-    except Exception as e:
-        logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
-        return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")    
-    # 3. 卡片區域氣泡 (分兩行)
-    card_rows = [[], []]
-    
-    for i, card in enumerate(cards):
-        row_index = i // 5  # 每行5張卡片
-        if row_index < 2:  # 限制最多2行 (10張卡片)
-            card_rows[row_index].append(card)
-    
-    for row_index, row_cards in enumerate(card_rows):
-        card_contents = []
-        
-        for card in row_cards:
-            card_id = card['id']
-            is_matched = card_id in matched_ids
-            is_flipped = card_id in flipped_ids
-            
-            # 創建卡片框
-            card_box = None
-            
-            if is_matched or is_flipped:
-                # 已翻開或已配對的卡片
-                if card['type'] == 'image':
-                        image_url = card['content']
-                        
-                        logger.info(f"顯示圖片卡: 詞彙={card['word']}, 圖片URL={image_url}")
-                        
-                        # 圖片卡 - 使用實際圖片
-                        card_box = {
-                            "type": "box",
-                            "layout": "vertical",
-                            "width": "60px",
-                            "height": "80px",
-                            "backgroundColor": "#E6F5FF",
-                            "cornerRadius": "4px",
-                            "borderWidth": "1px",
-                            "borderColor": "#AAAAAA",
-                            "contents": [
-                                {
-                                    "type": "image",
-                                    "url": image_url,
-                                    "size": "full",
-                                    "aspectMode": "cover",
-                                    "aspectRatio": "1:1"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": card['word'],
-                                    "size": "xxs",
-                                    "align": "center",
-                                    "wrap": True,
-                                    "maxLines": 2,
-                                    "color": "#111111",
-                                    "backgroundColor": "#FFFFFF",
-                                    "offsetBottom": "0px"
-                                }
-                            ]
-                        }
-                else:
-                        # 圖片URL不存在或詞彙不存在時的備用顯示
-                        logger.warning(f"詞彙圖片URL不存在: {card['word']}")
-                        card_box = {
-                            "type": "box",
-                            "layout": "vertical",
-                            "width": "60px",
-                            "height": "80px",
-                            "backgroundColor": "#E6F5FF",
-                            "cornerRadius": "4px",
-                            "borderWidth": "1px",
-                            "borderColor": "#AAAAAA",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "🖼️",
-                                    "size": "lg",
-                                    "align": "center"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": card['word'],
-                                    "size": "xxs",
-                                    "align": "center",
-                                    "wrap": True,
-                                    "maxLines": 2
-                                }
-                            ]
-                        }
-            else:
-                    # 音頻卡 - 添加播放按鈕
-                    card_box = {
-                        "type": "box",
-                        "layout": "vertical",
-                        "width": "60px",
-                        "height": "80px",
-                        "backgroundColor": "#FFF4E6",
-                        "cornerRadius": "4px",
-                        "borderWidth": "1px",
-                        "borderColor": "#AAAAAA",
-                        "contents": [
-                            {
-                                "type": "box",
-                                "layout": "vertical",
-                                "contents": [
-                                    {
-                                        "type": "text",
-                                        "text": "🎵",
-                                        "size": "lg",
-                                        "align": "center",
-                                        "color": "#FF6B6E"
-                                    },
-                                    {
-                                        "type": "text",
-                                        "text": card['thai'],
-                                        "size": "xxs",
-                                        "align": "center",
-                                        "wrap": True,
-                                        "maxLines": 2
-                                    }
-                                ]
-                            }
-                        ],
-                        "action": {
-                            "type": "message",
-                            "text": f"播放音頻:{card['word']}"
-                        }
-                    }
-                    
-                    # 自動發送音頻播放消息（如果是剛翻開的卡片）
-                    if is_flipped and not is_matched and card['type'] == 'audio':
-                            audio_url = card['content']
-                            # 使用 push_message 發送音頻消息（不需要等待用戶點擊）
-                            try:
-                                line_bot_api.push_message(
-                                    user_id,
-                                    AudioSendMessage(
-                                        original_content_url=audio_url,
-                                        duration=3000  # 假設音訊長度為3秒
-                                    )
-                                )
-                            except Exception as e:
-                                logger.error(f"發送音頻消息失敗: {str(e)}")
-        else:
-                # 未翻開的卡片
-                # 修正: 顯示的卡片編號為 card_id+1，但在翻牌操作中使用的是實際的 card_id
-                # 因此發送的訊息需要包含 card_id+1
-                display_num = card_id + 1
+        for row_cards in card_rows:
+            card_contents = []
+            for card in row_cards:
+                card_id = card['id']
+                is_matched = card_id in matched_ids
+                is_flipped = card_id in flipped_ids
+
                 card_box = {
                     "type": "box",
                     "layout": "vertical",
                     "width": "60px",
                     "height": "80px",
-                    "backgroundColor": "#4A86E8",
-                    "cornerRadius": "4px",
-                    "borderWidth": "1px",
-                    "borderColor": "#0B5ED7",
                     "contents": [
                         {
                             "type": "text",
-                            "text": "🎴",
-                            "color": "#FFFFFF",
-                            "align": "center",
-                            "gravity": "center",
-                            "size": "xl"
-                        },
-                        {
-                            "type": "text",
-                            "text": f"{display_num}",
-                            "color": "#FFFFFF",
-                            "align": "center",
-                            "size": "sm"
+                            "text": card['word'] if is_flipped or is_matched else "🎴",
+                            "size": "sm",
+                            "align": "center"
                         }
-                    ],
-                    "action": {
-                        "type": "message",
-                        "text": f"翻牌:{display_num}"  # 使用顯示的卡片編號
-                    }
+                    ]
                 }
-            
-        card_contents.append(card_box)
-        
-        # 添加卡片行
-        row_bubble = {
-    "type": "bubble",
-    "size": "kilo",  # 統一設置大小
-    "body": {
-        "type": "box",
-        "layout": "horizontal",
-        "spacing": "md",
-        "contents": card_contents,
-        "justifyContent": "space-around",
-        "paddingAll": "10px"
-    }
-}
-        
-        bubbles.append(row_bubble)
-    
-# 創建 Flex 輪播消息
-flex_message = {
-    "type": "carousel",
-    "contents": bubbles
-}
+                card_contents.append(card_box)
 
-# 在這裡添加錯誤處理邏輯
-def create_flex_memory_game(cards, game_state, user_id):
-    # 在函數開始時初始化 bubbles
-    bubbles = []
-
-    try:
-        # 遊戲信息氣泡等原有代碼
-        info_bubble = {
-            # ... 原有代碼
-        }
-        bubbles.append(info_bubble)
-
-        # 遊戲結束氣泡等原有代碼
-        if is_completed or is_timeout:
-            end_bubble = {
-                # ... 原有代碼
+            row_bubble = {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": card_contents
+                }
             }
-            bubbles.append(end_bubble)
-
-        # 卡片區域氣泡等原有代碼
-        card_rows = [[], []]
-        # ... 原有代碼用於生成卡片氣泡
-        for row_bubble in card_bubbles:
             bubbles.append(row_bubble)
 
         # 限制 bubbles 數量
-        if len(bubbles) > 10:
-            bubbles = bubbles[:10]
+        bubbles = bubbles[:10]
         
         logger.info(f"創建 Flex Message，Bubble 數量: {len(bubbles)}")
         
