@@ -124,16 +124,22 @@ test_azure_connection()
 # === LINE Bot Webhook 處理 ===
 @app.route("/callback", methods=['POST'])
 def callback():
-    """處理LINE Webhook回調"""
-    signature = request.headers['X-Line-Signature']
-    body = request.get_data(as_text=True)
-    
     try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        logger.error("無效的簽名")
-        abort(400)
+        # 增加更詳細的錯誤處理
+        signature = request.headers.get('X-Line-Signature', '')
+        body = request.get_data(as_text=True)
         
+        logger.info(f"收到回調，簽名: {signature}")
+        logger.info(f"回調內容: {body}")
+        
+        handler.handle(body, signature)
+    except InvalidSignatureError as e:
+        logger.error(f"簽名驗證失敗: {str(e)}")
+        abort(400)
+    except Exception as e:
+        logger.error(f"處理回調時發生未知錯誤: {str(e)}")
+        abort(500)
+    
     return 'OK'
 # === 第二部分：用戶數據管理和泰語學習資料 ===
 
