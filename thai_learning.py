@@ -1779,11 +1779,30 @@ flex_message = {
 
 # 在這裡添加錯誤處理邏輯
 def create_flex_memory_game(cards, game_state, user_id):
-    # 初始化 bubbles 為空列表
+    # 在函數開始時初始化 bubbles
     bubbles = []
 
     try:
-        # 之前的代碼邏輯保持不變
+        # 遊戲信息氣泡等原有代碼
+        info_bubble = {
+            # ... 原有代碼
+        }
+        bubbles.append(info_bubble)
+
+        # 遊戲結束氣泡等原有代碼
+        if is_completed or is_timeout:
+            end_bubble = {
+                # ... 原有代碼
+            }
+            bubbles.append(end_bubble)
+
+        # 卡片區域氣泡等原有代碼
+        card_rows = [[], []]
+        # ... 原有代碼用於生成卡片氣泡
+        for row_bubble in card_bubbles:
+            bubbles.append(row_bubble)
+
+        # 限制 bubbles 數量
         if len(bubbles) > 10:
             bubbles = bubbles[:10]
         
