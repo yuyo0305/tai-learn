@@ -1393,189 +1393,120 @@ def create_memory_game_board(cards, game_state):
 
 def create_flex_memory_game(cards, game_state, user_id):
     """創建 Flex Message 的記憶翻牌遊戲界面"""
-    # 獲取遊戲狀態數據
-    attempts = game_state.get('attempts', 0)
-    remaining_time = int(game_state.get('remaining_time', 0))
-    category_name = game_state.get('category_name', '未知')
-    is_completed = game_state.get('is_completed', False)
-    is_timeout = game_state.get('is_timeout', False)
-    
-    # 獲取已匹配和已翻開的卡片
-    matched_ids = []
-    for pair in game_state.get('matched_pairs', []):
-        matched_ids.extend(pair)
-    flipped_ids = game_state.get('flipped_cards', [])
-    
-    # 建立 Flex Message 容器
+    # 初始化 bubbles
     bubbles = []
-    
-    # 1. 遊戲信息氣泡
-    info_bubble = {
-        "type": "bubble",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "泰語記憶翻牌遊戲",
-                    "weight": "bold",
-                    "size": "xl",
-                    "color": "#ffffff"
-                },
-                {
-                    "type": "text",
-                    "text": category_name,
-                    "size": "md",
-                    "color": "#ffffff"
-                }
-            ],
-            "backgroundColor": "#4A86E8",
-            "paddingBottom": "10px"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "⏱️ 剩餘時間:",
-                            "size": "sm",
-                            "color": "#555555",
-                            "flex": 2
-                        },
-                        {
-                            "type": "text",
-                            "text": f"{remaining_time} 秒",
-                            "size": "sm",
-                            "color": "#111111",
-                            "flex": 1
-                        }
-                    ]
-                },
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "🔄 移動次數:",
-                            "size": "sm",
-                            "color": "#555555",
-                            "flex": 2
-                        },
-                        {
-                            "type": "text",
-                            "text": f"{attempts}",
-                            "size": "sm",
-                            "color": "#111111",
-                            "flex": 1
-                        }
-                    ],
-                    "margin": "sm"
-                },
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "✅ 已配對:",
-                            "size": "sm",
-                            "color": "#555555",
-                            "flex": 2
-                        },
-                        {
-                            "type": "text",
-                            "text": f"{len(matched_ids)//2}/{len(cards)//2} 組",
-                            "size": "sm",
-                            "color": "#111111",
-                            "flex": 1
-                        }
-                    ],
-                    "margin": "sm"
-                }
-            ]
-        },
-        "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "翻開卡片找出配對的圖片和發音",
-                    "wrap": True,
-                    "size": "xs",
-                    "margin": "sm",
-                    "color": "#888888",
-                    "align": "center"
-                }
-            ]
-        }
-    }
-    
-    bubbles.append(info_bubble)
-    
-    # 2. 遊戲結束氣泡 (如果適用)
-    if is_completed or is_timeout:
-        # 獲取結束訊息
-        game = next((g for g in [user_data_manager.get_user_data('temp')['game_state'].get('memory_game')] if g), None)
-        end_message = game.get_end_result() if game else "遊戲結束！"
+
+    try:
+        # 遊戲狀態數據
+        attempts = game_state.get('attempts', 0)
+        remaining_time = int(game_state.get('remaining_time', 0))
+        category_name = game_state.get('category_name', '未知')
+        is_completed = game_state.get('is_completed', False)
+        is_timeout = game_state.get('is_timeout', False)
         
-        end_bubble = {
+        # 獲取已匹配和已翻開的卡片
+        matched_ids = []
+        for pair in game_state.get('matched_pairs', []):
+            matched_ids.extend(pair)
+        flipped_ids = game_state.get('flipped_cards', [])
+
+        # 1. 遊戲信息氣泡
+        info_bubble = {
             "type": "bubble",
-            "body": {
+            "header": {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
                     {
                         "type": "text",
-                        "text": "遊戲結束",
+                        "text": "泰語記憶翻牌遊戲",
                         "weight": "bold",
                         "size": "xl",
-                        "align": "center"
+                        "color": "#ffffff"
                     },
                     {
                         "type": "text",
-                        "text": end_message,
-                        "wrap": True,
-                        "margin": "md"
+                        "text": category_name,
+                        "size": "md",
+                        "color": "#ffffff"
                     }
-                ]
+                ],
+                "backgroundColor": "#4A86E8",
+                "paddingBottom": "10px"
             },
-            "footer": {
+            "body": {
                 "type": "box",
-                "layout": "horizontal",
-                "spacing": "md",
+                "layout": "vertical",
                 "contents": [
                     {
-                        "type": "button",
-                        "style": "primary",
-                        "action": {
-                            "type": "message",
-                            "label": "再玩一次",
-                            "text": "開始記憶遊戲"
-                        },
-                        "color": "#1DB446"
-                    },
-                    {
-                        "type": "button",
-                        "action": {
-                            "type": "message",
-                            "label": "返回主選單",
-                            "text": "返回主選單"
-                        }
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "⏱️ 剩餘時間:",
+                                "size": "sm",
+                                "color": "#555555",
+                                "flex": 2
+                            },
+                            {
+                                "type": "text",
+                                "text": f"{remaining_time} 秒",
+                                "size": "sm",
+                                "color": "#111111",
+                                "flex": 1
+                            }
+                        ]
                     }
                 ]
             }
         }
+        bubbles.append(info_bubble)
+
+        # 2. 遊戲結束氣泡 (如果適用)
+        if is_completed or is_timeout:
+            game = next((g for g in [user_data_manager.get_user_data('temp')['game_state'].get('memory_game')] if g), None)
+            end_message = game.get_end_result() if game else "遊戲結束！"
+            
+            end_bubble = {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "遊戲結束",
+                            "weight": "bold",
+                            "size": "xl",
+                            "align": "center"
+                        },
+                        {
+                            "type": "text",
+                            "text": end_message,
+                            "wrap": True,
+                            "margin": "md"
+                        }
+                    ]
+                }
+            }
+            bubbles.append(end_bubble)
+
+        # 限制 bubbles 數量
+        bubbles = bubbles[:10]
         
-        bubbles.append(end_bubble)
-    
+        logger.info(f"創建 Flex Message，Bubble 數量: {len(bubbles)}")
+        
+        flex_message = {
+            "type": "carousel",
+            "contents": bubbles
+        }
+        
+        return FlexSendMessage(alt_text="泰語記憶翻牌遊戲", contents=flex_message)
+
+    except Exception as e:
+        logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
+        return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")    
     # 3. 卡片區域氣泡 (分兩行)
     card_rows = [[], []]
     
