@@ -1757,27 +1757,46 @@ def create_flex_memory_game(cards, game_state, user_id):
         
         # 添加卡片行
         row_bubble = {
-            "type": "bubble",
-            "size": "kilo",
-            "body": {
-                "type": "box",
-                "layout": "horizontal",
-                "spacing": "md",
-                "contents": card_contents,
-                "justifyContent": "space-around",
-                "paddingAll": "10px"
-            }
-        }
+    "type": "bubble",
+    "size": "kilo",  # 統一設置大小
+    "body": {
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "md",
+        "contents": card_contents,
+        "justifyContent": "space-around",
+        "paddingAll": "10px"
+    }
+}
         
         bubbles.append(row_bubble)
     
-    # 創建 Flex 輪播消息
-    flex_message = {
-        "type": "carousel",
-        "contents": bubbles
-    }
-    
-    return FlexSendMessage(alt_text="泰語記憶翻牌遊戲", contents=flex_message)
+# 創建 Flex 輪播消息
+flex_message = {
+    "type": "carousel",
+    "contents": bubbles
+}
+
+# 在這裡添加錯誤處理邏輯
+def create_flex_memory_game(cards, game_state, user_id):
+    try:
+        # 確保 bubbles 數量不超過 10
+        if len(bubbles) > 10:
+            bubbles = bubbles[:10]
+        
+        # 可以在這裡添加日誌記錄
+        logger.info(f"創建 Flex Message，Bubble 數量: {len(bubbles)}")
+        
+        flex_message = {
+            "type": "carousel",
+            "contents": bubbles
+        }
+        
+        return FlexSendMessage(alt_text="泰語記憶翻牌遊戲", contents=flex_message)
+
+    except Exception as e:
+        logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
+        return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
 
 # === 文字訊息處理 ===
 @handler.add(MessageEvent, message=TextMessage)
