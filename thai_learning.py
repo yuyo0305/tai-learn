@@ -1779,12 +1779,14 @@ flex_message = {
 
 # 在這裡添加錯誤處理邏輯
 def create_flex_memory_game(cards, game_state, user_id):
+    # 初始化 bubbles 為空列表
+    bubbles = []
+
     try:
-        # 確保 bubbles 數量不超過 10
+        # 之前的代碼邏輯保持不變
         if len(bubbles) > 10:
             bubbles = bubbles[:10]
         
-        # 可以在這裡添加日誌記錄
         logger.info(f"創建 Flex Message，Bubble 數量: {len(bubbles)}")
         
         flex_message = {
