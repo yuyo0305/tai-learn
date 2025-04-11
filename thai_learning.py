@@ -1252,37 +1252,36 @@ def handle_memory_game(user_id, message):
             return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
     
     elif message.startswith("翻牌:"):
-        try:
-            # 修正：正確處理卡片ID
-            # 用戶看到的是 card_id+1，所以這裡需要減1
-            card_num = int(message.split(":")[1]) if ":" in message else -1
-            card_id = card_num - 1  # 減1以獲取真實的卡片ID
-            
-            logger.info(f"用戶點擊卡片號碼: {card_num}, 轉換為卡片ID: {card_id}")
-            
-            game_state, result, should_play_audio, audio_url = game.flip_card(card_id)
-            
-            # 儲存臨時數據用於訪問遊戲結果
-            temp_data = user_data_manager.get_user_data('temp')
-            if 'game_state' not in temp_data:
-                temp_data['game_state'] = {}
-            temp_data['game_state']['memory_game'] = game
-            
-            # 準備回應訊息
-            messages = []
-            
-            # 添加文字結果
-            messages.append(TextSendMessage(text=result))
-            
-            # 如果需要播放音頻，添加音頻消息
-            if should_play_audio and audio_url:
-                logger.info(f"準備播放音頻: {audio_url}")
-                messages.append(
-                    AudioSendMessage(
-                        original_content_url=audio_url,
-                        duration=3000  # 假設音訊長度為3秒
-                    )
+    try:
+        card_id = int(message.split(":")[1]) if ":" in message else -1
+        logger.info(f"用戶點擊卡片號碼: {card_id}")
+        
+        # 翻開卡片
+        game_state, result, should_play_audio, audio_url = game.flip_card(card_id)
+        
+        # 儲存臨時數據用於訪問遊戲結果
+        temp_data = user_data_manager.get_user_data('temp')
+        if 'game_state' not in temp_data:
+            temp_data['game_state'] = {}
+        temp_data['game_state']['memory_game'] = game
+        
+        # 準備回應訊息
+        messages = []
+        
+        # 添加文字結果
+        messages.append(TextSendMessage(text=result))
+        
+        # 如果需要播放音頻，添加音頻消息
+        if should_play_audio and audio_url:
+            logger.info(f"準備播放音頻: {audio_url}")
+            messages.append(
+                AudioSendMessage(
+                    original_content_url=audio_url,
+                    duration=3000  # 假設音訊長度為3秒
                 )
+            )
+        
+        # 後續處理不變...
             
             # 如果遊戲還在進行中且沒有超時
             if game_state and not game_state.get('is_completed', False) and not game_state.get('is_timeout', False):
@@ -1492,7 +1491,7 @@ def create_flex_memory_game(cards, game_state, user_id):
             }
             bubbles.append(end_bubble)
 
-        # 3. 卡片氣泡
+        # 3. 卡片氣泡 - 這裡需要修改
         card_rows = [[], []]
         for i, card in enumerate(cards):
             row_index = i // 5
@@ -1506,20 +1505,119 @@ def create_flex_memory_game(cards, game_state, user_id):
                 is_matched = card_id in matched_ids
                 is_flipped = card_id in flipped_ids
 
-                card_box = {
-                    "type": "box",
-                    "layout": "vertical",
-                    "width": "60px",
-                    "height": "80px",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": card['word'] if is_flipped or is_matched else "🎴",
-                            "size": "sm",
-                            "align": "center"
+                # 這裡需要修改 - 根據卡片類型顯示不同內容
+                if is_matched or is_flipped:
+                    # 已翻開的卡片
+                    if card['type'] == 'image':
+                        # 圖片卡 - 顯示實際圖片
+                        card_box = {
+                            "type": "box",
+                            "layout": "vertical",
+                            "width": "60px",
+                            "height": "80px",
+                            "backgroundColor": "#E6F5FF",
+                            "cornerRadius": "4px",
+                            "borderWidth": "1px",
+                            "borderColor": "#AAAAAA",
+                            "contents": [
+                                {
+                                    "type": "image",
+                                    "url": card['content'],  # 直接使用卡片中的圖片URL
+                                    "size": "full",
+                                    "aspectMode": "cover",
+                                    "aspectRatio": "1:1"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": card['word'],
+                                    "size": "xxs",
+                                    "align": "center",
+                                    "wrap": True,
+                                    "maxLines": 2
+                                }
+                            ]
                         }
-                    ]
-                }
+                    else:
+                        # 音頻卡 - 添加按鈕並自動播放
+                        card_box = {
+                            "type": "box",
+                            "layout": "vertical",
+                            "width": "60px",
+                            "height": "80px",
+                            "backgroundColor": "#FFF4E6",
+                            "cornerRadius": "4px",
+                            "borderWidth": "1px",
+                            "borderColor": "#AAAAAA",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "🎵",
+                                    "size": "lg",
+                                    "align": "center",
+                                    "color": "#FF6B6E"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": card['thai'],
+                                    "size": "xxs",
+                                    "align": "center",
+                                    "wrap": True,
+                                    "maxLines": 2
+                                }
+                            ],
+                            "action": {
+                                "type": "message",
+                                "text": f"播放音頻:{card['word']}"
+                            }
+                        }
+                        
+                        # 如果是剛翻開的音頻卡，自動播放音頻
+                        if is_flipped and not is_matched:
+                            try:
+                                line_bot_api.push_message(
+                                    user_id,
+                                    AudioSendMessage(
+                                        original_content_url=card['content'],
+                                        duration=3000  # 假設音訊長度為3秒
+                                    )
+                                )
+                                logger.info(f"自動播放音頻: {card['content']}")
+                            except Exception as e:
+                                logger.error(f"發送音頻失敗: {str(e)}")
+                else:
+                    # 未翻開的卡片 - 保持原樣
+                    card_box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "width": "60px",
+                        "height": "80px",
+                        "backgroundColor": "#4A86E8",
+                        "cornerRadius": "4px",
+                        "borderWidth": "1px",
+                        "borderColor": "#0B5ED7",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "🎴",
+                                "color": "#FFFFFF",
+                                "align": "center",
+                                "gravity": "center",
+                                "size": "xl"
+                            },
+                            {
+                                "type": "text",
+                                "text": f"{card_id}",
+                                "color": "#FFFFFF",
+                                "align": "center",
+                                "size": "sm"
+                            }
+                        ],
+                        "action": {
+                            "type": "message",
+                            "text": f"翻牌:{card_id}"
+                        }
+                    }
+
                 card_contents.append(card_box)
 
             row_bubble = {
@@ -1547,7 +1645,6 @@ def create_flex_memory_game(cards, game_state, user_id):
     except Exception as e:
         logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
         return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
-
 # === 文字訊息處理 ===
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
