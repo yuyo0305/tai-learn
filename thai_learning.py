@@ -859,9 +859,9 @@ def start_echo_practice(user_id):
         text="請點擊錄音按鈕開始錄音",
         actions=[
             URIAction(
-                label="開始錄音",
-                uri="line://nv/camera/speech"
-            ),
+    label="開始錄音",
+    uri="line://nv/speech"  # 這會直接開啟錄音介面
+),
             MessageAction(label="返回主選單", text="返回主選單")
         ]
     )
