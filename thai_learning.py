@@ -987,7 +987,7 @@ def show_main_menu():
 # === 第五部分：記憶翻牌遊戲和訊息處理 ===
 from linebot.models import (
     FlexSendMessage, BubbleContainer, BoxComponent, TextComponent, ButtonComponent,
-    ImageComponent, IconComponent, SeparatorComponent,URIAction, MessageAction, PostbackAction
+    ImageComponent, IconComponent, SeparatorComponent, URIAction, MessageAction, PostbackAction
 )
 
 # === 記憶翻牌遊戲類 ===
@@ -1002,6 +1002,7 @@ class MemoryGame:
         self.end_time = None
         self.category = category
         self.time_limit = 90  # 設定時間限制為90秒（1分30秒）
+        self.pending_reset = False  # 用於配對失敗時，暫時保持卡片翻開
         
     def initialize_game(self, category=None):
         """根據類別初始化遊戲卡片"""
@@ -1014,6 +1015,12 @@ class MemoryGame:
         
         # 從類別中選擇 5 個詞彙
         category_words = thai_data['categories'][self.category]['words']
+        
+        # 如果是食物類別，確保不包含有問題的詞彙
+        if self.category == 'food' and '麵' in category_words:
+            category_words.remove('麵')
+            logger.info("從食物類別中移除了詞彙「麵」")
+        
         selected_words = random.sample(category_words, min(5, len(category_words)))
         
         # 初始化卡片清單
@@ -1057,12 +1064,19 @@ class MemoryGame:
         self.attempts = 0
         self.start_time = datetime.now()
         self.end_time = None
+        self.pending_reset = False
         
         logger.info(f"初始化記憶翻牌遊戲，類別: {self.category}，卡片數量: {len(self.cards)}")
         return self.cards
     
     def flip_card(self, card_id):
         """翻轉卡片並檢查配對"""
+        # 檢查是否需要重置先前不匹配的卡片
+        if self.pending_reset:
+            logger.info("重置先前不匹配的卡片")
+            self.flipped_cards = []
+            self.pending_reset = False
+        
         # 尋找卡片
         card = next((c for c in self.cards if c['id'] == card_id), None)
         if not card:
@@ -1103,13 +1117,14 @@ class MemoryGame:
                 self.matched_pairs.append(self.flipped_cards.copy())
                 result = f"配對成功！{card1['word']} - {card1['thai']}"
                 logger.info(f"卡片配對成功: {card1['id']} 和 {card2['id']}")
+                # 配對成功才清空翻轉卡片列表
+                self.flipped_cards = []
             else:
-                # 配對失敗
+                # 配對失敗 - 設置標記而不是立即清空翻轉卡片列表
                 result = "配對失敗，請再試一次"
                 logger.info(f"卡片配對失敗: {card1['id']} 和 {card2['id']}")
-            
-            # 重置翻轉卡片列表
-            self.flipped_cards = []
+                self.pending_reset = True
+                # 不要在這裡清空 self.flipped_cards，這樣卡片會保持翻開狀態
         
         # 檢查遊戲是否結束
         if len(self.matched_pairs) * 2 == len(self.cards):
@@ -1151,7 +1166,8 @@ class MemoryGame:
             'is_completed': len(self.matched_pairs) * 2 == len(self.cards),
             'is_timeout': elapsed_time > self.time_limit,
             'category': self.category,
-            'category_name': category_name
+            'category_name': category_name,
+            'pending_reset': self.pending_reset
         }
     
     def get_end_result(self):
@@ -1475,7 +1491,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                             ]
                         }
                     else:
-                        # 音頻卡 - 添加按鈕並自動播放
+                        # 音頻卡 - 添加按鈕
                         card_box = {
                             "type": "box",
                             "layout": "vertical",
@@ -1508,19 +1524,8 @@ def create_flex_memory_game(cards, game_state, user_id):
                             }
                         }
                         
-                        # 如果是剛翻開的音頻卡，自動播放音頻
-                        if is_flipped and not is_matched:
-                            try:
-                                line_bot_api.push_message(
-                                    user_id,
-                                    AudioSendMessage(
-                                        original_content_url=card['content'],
-                                        duration=3000  # 假設音訊長度為3秒
-                                    )
-                                )
-                                logger.info(f"自動播放音頻: {card['content']}")
-                            except Exception as e:
-                                logger.error(f"發送音頻失敗: {str(e)}")
+                        # 移除自動播放音頻的代碼，防止重複播放
+                        # 音頻播放已在 handle_memory_game 中處理
                 else:
                     # 未翻開的卡片 - 保持原樣
                     card_box = {
@@ -1716,8 +1721,6 @@ def handle_text_message(event):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
-    
- 
     # 主程序入口 (放在最後)
 if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
