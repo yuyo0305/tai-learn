@@ -1252,36 +1252,34 @@ def handle_memory_game(user_id, message):
             return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
     
     elif message.startswith("翻牌:"):
-    try:
-        card_id = int(message.split(":")[1]) if ":" in message else -1
-        logger.info(f"用戶點擊卡片號碼: {card_id}")
-        
-        # 翻開卡片
-        game_state, result, should_play_audio, audio_url = game.flip_card(card_id)
-        
-        # 儲存臨時數據用於訪問遊戲結果
-        temp_data = user_data_manager.get_user_data('temp')
-        if 'game_state' not in temp_data:
-            temp_data['game_state'] = {}
-        temp_data['game_state']['memory_game'] = game
-        
-        # 準備回應訊息
-        messages = []
-        
-        # 添加文字結果
-        messages.append(TextSendMessage(text=result))
-        
-        # 如果需要播放音頻，添加音頻消息
-        if should_play_audio and audio_url:
-            logger.info(f"準備播放音頻: {audio_url}")
-            messages.append(
-                AudioSendMessage(
-                    original_content_url=audio_url,
-                    duration=3000  # 假設音訊長度為3秒
+        try:
+            card_id = int(message.split(":")[1]) if ":" in message else -1
+            logger.info(f"用戶點擊卡片號碼: {card_id}")
+            
+            # 翻開卡片
+            game_state, result, should_play_audio, audio_url = game.flip_card(card_id)
+            
+            # 儲存臨時數據用於訪問遊戲結果
+            temp_data = user_data_manager.get_user_data('temp')
+            if 'game_state' not in temp_data:
+                temp_data['game_state'] = {}
+            temp_data['game_state']['memory_game'] = game
+            
+            # 準備回應訊息
+            messages = []
+            
+            # 添加文字結果
+            messages.append(TextSendMessage(text=result))
+            
+            # 如果需要播放音頻，添加音頻消息
+            if should_play_audio and audio_url:
+                logger.info(f"準備播放音頻: {audio_url}")
+                messages.append(
+                    AudioSendMessage(
+                        original_content_url=audio_url,
+                        duration=3000  # 假設音訊長度為3秒
+                    )
                 )
-            )
-        
-        # 後續處理不變...
             
             # 如果遊戲還在進行中且沒有超時
             if game_state and not game_state.get('is_completed', False) and not game_state.get('is_timeout', False):
@@ -1328,67 +1326,6 @@ def handle_memory_game(user_id, message):
     
     # 默認回傳
     return TextSendMessage(text="請選擇「開始記憶遊戲」開始新的遊戲")
-
-def create_memory_game_board(cards, game_state):
-    """創建記憶翻牌遊戲畫面"""
-    # 從遊戲狀態獲取資訊
-    attempts = game_state['attempts']
-    
-    # 獲取配對和翻牌資訊
-    matched_ids = []
-    for pair in game_state.get('matched_pairs', []):
-        matched_ids.extend(pair)
-    flipped_ids = game_state.get('flipped_cards', [])
-    
-    remaining_time = int(game_state.get('remaining_time', 0))
-    
-    # 創建遊戲資訊文字
-    # 使用 game_state 中的類別信息而不是依賴 game 變數
-    category_name = "未知"
-    if 'category' in game_state:
-        category = game_state['category']
-        if category in thai_data['categories']:
-            category_name = thai_data['categories'][category]['name']
-    
-    game_info = f"🎮 泰語記憶翻牌遊戲 - {category_name}\n⏱️ 剩餘時間: {remaining_time} 秒\n🔄 移動次數: {attempts}\n✅ 已配對: {len(matched_ids)//2}/{len(cards)//2} 組\n\n點擊卡片翻牌，找出配對的詞彙與發音"
-    
-
-    # 創建卡片按鈕
-    card_buttons = []
-    
-    # 根據卡片狀態決定顯示内容
-    for card in cards:
-        card_id = card['id']
-        is_flipped = card_id in flipped_ids
-        is_matched = card_id in matched_ids
-        
-        if is_flipped or is_matched:
-            # 已翻開的卡片
-            if card['type'] == 'image':
-                label = f"🖼️ {card['word']}"
-                action = f"已翻開:{card_id}"
-            else:  # audio
-                label = f"🎵 {card['thai']}"
-                action = f"播放音頻:{card['word']}"
-        else:
-            # 未翻開的卡片
-            label = f"🎴 {card_id+1}"
-            action = f"翻牌:{card_id+1}"  # 修正：使用顯示的卡片號碼
-        
-        card_buttons.append(
-            QuickReplyButton(
-                action=MessageAction(
-                    label=label[:12],  # LINE 按鈕標籤長度限制
-                    text=action
-                )
-            )
-        )
-    
-    # 返回遊戲畫面
-    return TextSendMessage(
-        text=game_info,
-        quick_reply=QuickReply(items=card_buttons[:13])  # LINE 限制 13 個 QuickReply 按鈕
-    )
 
 def create_flex_memory_game(cards, game_state, user_id):
     """創建 Flex Message 的記憶翻牌遊戲界面"""
@@ -1645,6 +1582,7 @@ def create_flex_memory_game(cards, game_state, user_id):
     except Exception as e:
         logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
         return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
+
 # === 文字訊息處理 ===
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
@@ -1778,7 +1716,8 @@ def handle_text_message(event):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
-
+    
+ 
     # 主程序入口 (放在最後)
 if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
