@@ -860,7 +860,7 @@ def start_echo_practice(user_id):
         actions=[
             URIAction(
     label="開始錄音",
-    uri="line://nv/speech"  # 這會直接開啟錄音介面
+    uri="https://line.me/R/nv/speech/"  # 這會直接開啟錄音介面
 ),
             MessageAction(label="返回主選單", text="返回主選單")
         ]
