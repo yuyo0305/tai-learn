@@ -839,7 +839,7 @@ def start_echo_practice(user_id):
     # 添加發音指導
     message_list.append(
         TextSendMessage(
-            text=f"請聽標準發音，然後跟著練習：\n\n泰語：{word_data['thai']}\n發音：{word_data['pronunciation']}\n\n請點擊下方麥克風按鈕錄製您的發音"
+            text=f"請聽標準發音，然後跟著練習：\n\n泰語：{word_data['thai']}\n發音：{word_data['pronunciation']}\n\n請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
         )
     )
     
@@ -853,15 +853,12 @@ def start_echo_practice(user_id):
         TextSendMessage(text=f"音調指南：\n{tone_info}")
     )
     
-    # 添加錄音引導
+    # 添加選項按鈕（移除錄音按鈕，因為會使用LINE聊天界面的麥克風按鈕）
     buttons_template = ButtonsTemplate(
         title="發音練習",
-        text="請點擊錄音按鈕開始錄音",
+        text="其他選項",
         actions=[
-            URIAction(
-    label="開始錄音",
-    uri="https://line.me/R/nv/speech/"  # 這會直接開啟錄音介面
-),
+            MessageAction(label="再聽一次", text=f"播放音頻:{word_key}"),
             MessageAction(label="返回主選單", text="返回主選單")
         ]
     )
