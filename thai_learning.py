@@ -448,8 +448,8 @@ def get_audio_content(message_id):
         audio_content += chunk
     return audio_content
 
-def process_audio_content(audio_content):
-    """處理音頻內容並轉換為適合語音識別的格式"""
+def process_audio_content_with_gcs(audio_content, user_id):
+    """處理音頻內容並上傳到 GCS"""
     try:
         # 創建臨時目錄
         temp_dir = os.environ.get('TEMP', '/tmp')
@@ -457,8 +457,9 @@ def process_audio_content(audio_content):
         os.makedirs(audio_dir, exist_ok=True)
         
         # 生成唯一的文件名
-        temp_m4a = os.path.join(audio_dir, f'temp_{uuid.uuid4()}.m4a')
-        temp_wav = os.path.join(audio_dir, f'temp_{uuid.uuid4()}.wav')
+        audio_id = f"{user_id}_{uuid.uuid4()}"
+        temp_m4a = os.path.join(audio_dir, f'temp_{audio_id}.m4a')
+        temp_wav = os.path.join(audio_dir, f'temp_{audio_id}.wav')
         
         logger.info(f"保存原始音頻到 {temp_m4a}")
         # 保存原始音頻
@@ -466,27 +467,38 @@ def process_audio_content(audio_content):
             f.write(audio_content)
         
         logger.info("使用 pydub 轉換音頻格式")
-        # 使用 pydub 轉換格式
+        # 使用 pydub 轉換格式 - 使用 Azure 推薦的格式
         audio = AudioSegment.from_file(temp_m4a)
-        audio = audio.set_frame_rate(16000).set_channels(1)
+        audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)  # 16kHz, 單聲道, 16-bit PCM
         audio.export(temp_wav, format='wav')
         
-        # 清除原始文件
+        # 確認 WAV 檔案已成功創建
+        if not os.path.exists(temp_wav):
+            logger.error(f"WAV 檔案創建失敗: {temp_wav}")
+            return None, None
+            
+        logger.info(f"音頻轉換成功，WAV 檔案路徑: {temp_wav}")
+            
+        # 上傳到 GCS
+        gcs_path = f"user_audio/{audio_id}.wav"
+        
+        # 重新打開檔案用於上傳（確保檔案指針在起始位置）
+        with open(temp_wav, 'rb') as wav_file:
+            public_url = upload_file_to_gcs(wav_file, gcs_path, "audio/wav")
+        
+        # 清除臨時文件（不要清除 temp_wav，因為後續需要使用）
         try:
             os.remove(temp_m4a)
             logger.info(f"已清除臨時文件 {temp_m4a}")
         except Exception as e:
             logger.warning(f"清除臨時文件失敗: {str(e)}")
             pass
-            
-        return temp_wav
+        
+        # 如果 GCS 上傳失敗，返回本地路徑仍舊有效
+        return public_url, temp_wav
     except Exception as e:
         logger.error(f"音頻處理錯誤: {str(e)}")
-        # 如果處理失敗，返回原始音頻
-        temp_path = os.path.join(audio_dir, f'original_{uuid.uuid4()}.bin')
-        with open(temp_path, 'wb') as f:
-            f.write(audio_content)
-        return temp_path
+        return None, None
 
 def process_audio_content_with_gcs(audio_content, user_id):
     """處理音頻內容並上傳到 GCS"""
@@ -594,12 +606,35 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
         
         logger.info("已創建語音識別器")
         
+        # 設置錯誤回調以獲取更詳細的錯誤信息
+        done = False
+        error_details = ""
+        
+        def recognized_cb(evt):
+            logger.info(f"RECOGNIZED: {evt}")
+        
+        def canceled_cb(evt):
+            nonlocal done, error_details
+            logger.info(f"CANCELED: {evt}")
+            if evt.reason == speechsdk.CancellationReason.Error:
+                logger.error(f"錯誤碼: {evt.error_code}")
+                logger.error(f"錯誤詳情: {evt.error_details}")
+                error_details = f"錯誤碼: {evt.error_code}, 錯誤詳情: {evt.error_details}"
+            done = True
+        
+        # 添加回調
+        speech_recognizer.recognized.connect(recognized_cb)
+        speech_recognizer.canceled.connect(canceled_cb)
+        
         # 應用發音評估配置
         pronunciation_assessment = pronunciation_config.apply_to(speech_recognizer)
         
         # 開始識別
         logger.info("開始識別語音...")
         result = speech_recognizer.recognize_once_async().get()
+        
+        if error_details:
+            logger.error(f"詳細錯誤信息: {error_details}")
         
         # 處理結果
         if result.reason == speechsdk.ResultReason.RecognizedSpeech:
@@ -626,12 +661,19 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
                 "fluency_score": fluency_score
             }
         else:
+            detail_info = ""
+            if result.reason == speechsdk.ResultReason.Canceled:
+                cancellation = result.cancellation_details
+                if cancellation.reason == speechsdk.CancellationReason.Error:
+                    detail_info = f"錯誤碼: {cancellation.error_code}, 錯誤詳情: {cancellation.error_details}"
+                    logger.error(detail_info)
+            
             logger.warning(f"語音識別失敗，原因: {result.reason}, 詳細資訊: {result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'}")
             return {
                 "success": False,
                 "error": f"無法識別語音，原因: {result.reason}",
                 "result_reason": result.reason,
-                "details": result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'
+                "details": detail_info or (result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None')
             }
     
     except Exception as e:
@@ -640,6 +682,7 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
             "success": False,
             "error": str(e)
         }
+       
     finally:
         # 保留臨時檔案以便調試
         # 在問題排除後，可以重新啟用此代碼以清理臨時檔案
