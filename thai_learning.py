@@ -552,7 +552,7 @@ def process_audio_content_with_gcs(audio_content, user_id):
         logger.error(f"音頻處理錯誤: {str(e)}")
         return None, None
     
-def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
+def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改為空字符串
     """使用Azure Speech Services進行發音評估"""
     try:
         logger.info(f"開始發音評估，參考文本: {reference_text}, 音頻檔案: {audio_file_path}")
@@ -705,7 +705,7 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
         # except Exception as e:
         #     logger.warning(f"清除臨時檔案失敗: {str(e)}")
         pass
-    
+
 def get_audio_content_with_gcs(message_id, user_id):
     """從LINE取得音訊內容並存儲到 GCS"""
     logger.info(f"獲取音訊內容，訊息ID: {message_id}")
