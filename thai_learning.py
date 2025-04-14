@@ -53,7 +53,7 @@ GCS_BUCKET_NAME = os.environ.get('GCS_BUCKET_NAME', 'your-thai-learning-bucket')
 logger.info(f"初始化應用程式... LINE Bot, Azure Speech 和 GCS 服務已配置")
 
 # === Google Cloud Storage 輔助函數 ===
-python# === Google Cloud Storage 輔助函數 ===
+
 def init_gcs_client():
     """初始化 Google Cloud Storage 客戶端"""
     try:
