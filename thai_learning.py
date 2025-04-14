@@ -53,61 +53,44 @@ GCS_BUCKET_NAME = os.environ.get('GCS_BUCKET_NAME', 'your-thai-learning-bucket')
 logger.info(f"初始化應用程式... LINE Bot, Azure Speech 和 GCS 服務已配置")
 
 # === Google Cloud Storage 輔助函數 ===
+python# === Google Cloud Storage 輔助函數 ===
 def init_gcs_client():
     """初始化 Google Cloud Storage 客戶端"""
     try:
-        keyfile_path = r"C:\Users\ids\Desktop\泰文學習的論文資料(除了)程式相關\泰文聊天機器人google storage 金鑰.json"
-        storage_client = storage.Client.from_service_account_json(keyfile_path)
-        logger.info("已成功初始化 Google Cloud Storage 客戶端")
+        # 嘗試從環境變數獲取認證
+        import json
+        import tempfile
+        
+        # 1. 首先嘗試使用環境變數中的 JSON 內容
+        creds_json = os.environ.get('GCS_CREDENTIALS')
+        if creds_json:
+            # 創建臨時文件存儲憑證
+            with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as temp:
+                temp.write(creds_json.encode('utf-8'))
+                temp_file_name = temp.name
+            
+            # 使用臨時文件初始化客戶端
+            storage_client = storage.Client.from_service_account_json(temp_file_name)
+            
+            # 使用後刪除臨時文件
+            os.unlink(temp_file_name)
+            logger.info("使用環境變數 GCS_CREDENTIALS 成功初始化 Google Cloud Storage 客戶端")
+            return storage_client
+            
+        # 2. 嘗試使用本地金鑰文件 (本地開發使用)
+        local_keyfile_path = r"C:\Users\ids\Desktop\泰文學習的論文資料(除了)程式相關\泰文聊天機器人google storage 金鑰.json"
+        if os.path.exists(local_keyfile_path):
+            storage_client = storage.Client.from_service_account_json(local_keyfile_path)
+            logger.info("使用本地金鑰文件成功初始化 Google Cloud Storage 客戶端")
+            return storage_client
+            
+        # 3. 嘗試使用默認認證
+        storage_client = storage.Client()
+        logger.info("使用默認認證成功初始化 Google Cloud Storage 客戶端")
         return storage_client
+    
     except Exception as e:
         logger.error(f"初始化 Google Cloud Storage 客戶端失敗: {str(e)}")
-        return None
-
-def upload_file_to_gcs(file_data, destination_blob_name, content_type="audio/wav"):
-    """上傳文件到 Google Cloud Storage 並返回公開 URL"""
-    storage_client = init_gcs_client()
-    if not storage_client:
-        return None
-    
-    try:
-        bucket = storage_client.bucket(GCS_BUCKET_NAME)
-        blob = bucket.blob(destination_blob_name)
-        
-        # 設置內容類型
-        blob.content_type = content_type
-        
-        # 上傳數據
-        if isinstance(file_data, bytes):
-            blob.upload_from_string(file_data, content_type=content_type)
-        else:
-            blob.upload_from_file(file_data)
-        
-        # 設置為公開訪問
-        blob.make_public()
-        
-        logger.info(f"文件已上傳到 {destination_blob_name}")
-        return blob.public_url
-    except Exception as e:
-        logger.error(f"上傳文件到 GCS 失敗: {str(e)}")
-        return None
-
-def get_file_from_gcs(blob_name):
-    """從 Google Cloud Storage 下載文件"""
-    storage_client = init_gcs_client()
-    if not storage_client:
-        return None
-    
-    try:
-        bucket = storage_client.bucket(GCS_BUCKET_NAME)
-        blob = bucket.blob(blob_name)
-        
-        # 下載到內存中
-        contents = blob.download_as_bytes()
-        logger.info(f"已從 GCS 獲取文件 {blob_name}")
-        return contents
-    except Exception as e:
-        logger.error(f"從 GCS 獲取文件失敗: {str(e)}")
         return None
 
 # 測試 Azure 語音服務連接
