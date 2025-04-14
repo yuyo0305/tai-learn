@@ -56,7 +56,8 @@ logger.info(f"初始化應用程式... LINE Bot, Azure Speech 和 GCS 服務已�
 def init_gcs_client():
     """初始化 Google Cloud Storage 客戶端"""
     try:
-        storage_client = storage.Client()
+        keyfile_path = r"C:\Users\ids\Desktop\泰文學習的論文資料(除了)程式相關\泰文聊天機器人google storage 金鑰.json"
+        storage_client = storage.Client.from_service_account_json(keyfile_path)
         logger.info("已成功初始化 Google Cloud Storage 客戶端")
         return storage_client
     except Exception as e:
