@@ -71,7 +71,7 @@ def init_gcs_client():
             
             # 使用臨時文件初始化客戶端
             storage_client = storage.Client.from_service_account_json(temp_file_name)
-            
+                       
             # 使用後刪除臨時文件
             os.unlink(temp_file_name)
             logger.info("使用環境變數 GCS_CREDENTIALS 成功初始化 Google Cloud Storage 客戶端")
@@ -91,6 +91,44 @@ def init_gcs_client():
     
     except Exception as e:
         logger.error(f"初始化 Google Cloud Storage 客戶端失敗: {str(e)}")
+        return None
+
+def upload_file_to_gcs(file_content, destination_blob_name, content_type=None):
+    """上傳檔案到 Google Cloud Storage 並返回公開 URL"""
+    try:
+        # 初始化 GCS 客戶端
+        storage_client = init_gcs_client()
+        if not storage_client:
+            logger.error("無法初始化 GCS 客戶端")
+            return None
+            
+        # 獲取 bucket
+        bucket = storage_client.bucket(GCS_BUCKET_NAME)
+        
+        # 創建一個新的 blob
+        blob = bucket.blob(destination_blob_name)
+        
+        # 設置內容類型（如果提供）
+        if content_type:
+            blob.content_type = content_type
+            
+        # 上傳檔案
+        if hasattr(file_content, 'read'):
+            # 如果是檔案物件
+            blob.upload_from_file(file_content, rewind=True)
+        else:
+            # 如果是二進制數據
+            blob.upload_from_string(file_content)
+            
+        # 設置為公開可讀取
+        blob.make_public()
+        
+        # 返回公開 URL
+        logger.info(f"成功上傳檔案至 {destination_blob_name}, URL: {blob.public_url}")
+        return blob.public_url
+        
+    except Exception as e:
+        logger.error(f"上傳檔案到 GCS 時發生錯誤: {str(e)}")
         return None
 
 # 測試 Azure 語音服務連接
@@ -474,12 +512,21 @@ def process_audio_content_with_gcs(audio_content, user_id):
         audio = audio.set_frame_rate(16000).set_channels(1)
         audio.export(temp_wav, format='wav')
         
+        # 確認 WAV 檔案已成功創建
+        if not os.path.exists(temp_wav):
+            logger.error(f"WAV 檔案創建失敗: {temp_wav}")
+            return None, None
+            
+        logger.info(f"音頻轉換成功，WAV 檔案路徑: {temp_wav}")
+            
         # 上傳到 GCS
         gcs_path = f"user_audio/{audio_id}.wav"
+        
+        # 重新打開檔案用於上傳（確保檔案指針在起始位置）
         with open(temp_wav, 'rb') as wav_file:
             public_url = upload_file_to_gcs(wav_file, gcs_path, "audio/wav")
         
-        # 清除臨時文件
+        # 清除臨時文件（不要清除 temp_wav，因為後續需要使用）
         try:
             os.remove(temp_m4a)
             logger.info(f"已清除臨時文件 {temp_m4a}")
@@ -487,6 +534,7 @@ def process_audio_content_with_gcs(audio_content, user_id):
             logger.warning(f"清除臨時文件失敗: {str(e)}")
             pass
         
+        # 如果 GCS 上傳失敗，返回本地路徑仍舊有效
         return public_url, temp_wav
     except Exception as e:
         logger.error(f"音頻處理錯誤: {str(e)}")
@@ -495,23 +543,51 @@ def process_audio_content_with_gcs(audio_content, user_id):
 def get_audio_content_with_gcs(message_id, user_id):
     """從LINE取得音訊內容並存儲到 GCS"""
     logger.info(f"獲取音訊內容，訊息ID: {message_id}")
-    message_content = line_bot_api.get_message_content(message_id)
-    audio_content = b''
-    for chunk in message_content.iter_content():
-        audio_content += chunk
-    
-    # 上傳到 GCS
-    public_url, temp_file = process_audio_content_with_gcs(audio_content, user_id)
-    
-    return audio_content, public_url, temp_file
-
-def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
-    """使用Azure Speech Services進行發音評估"""
     try:
-        logger.info(f"開始發音評估，參考文本: {reference_text}")
+        message_content = line_bot_api.get_message_content(message_id)
+        audio_content = b''
+        for chunk in message_content.iter_content():
+            audio_content += chunk
+        
+        logger.info(f"成功獲取音訊內容，大小: {len(audio_content)} 字節")
+        
+        # 上傳到 GCS
+        public_url, temp_file = process_audio_content_with_gcs(audio_content, user_id)
+        
+        if not public_url:
+            logger.warning("GCS 上傳失敗，但本地文件可能仍然可用")
+        
+        if not temp_file:
+            logger.error("音頻處理失敗，無法獲取本地文件路徑")
+            
+        return audio_content, public_url, temp_file
+    except Exception as e:
+        logger.error(f"獲取音訊內容時發生錯誤: {str(e)}", exc_info=True)
+        return None, None, None
+        
+        # 確認檔案存在
+        if not os.path.exists(audio_file_path):
+            logger.error(f"音頻檔案不存在: {audio_file_path}")
+            return {
+                "success": False,
+                "error": f"音頻檔案不存在: {audio_file_path}"
+            }
+            
+        # 檢查檔案大小
+        file_size = os.path.getsize(audio_file_path)
+        logger.info(f"音頻檔案大小: {file_size} 字節")
+        if file_size == 0:
+            logger.error("音頻檔案為空")
+            return {
+                "success": False,
+                "error": "音頻檔案為空"
+            }
+            
         # 設定語音配置
         speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
         speech_config.speech_recognition_language = language
+        
+        logger.info("已設置 Speech Config")
         
         # 設定發音評估配置
         pronunciation_config = speechsdk.PronunciationAssessmentConfig(
@@ -521,14 +597,22 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
             enable_miscue=True
         )
         
-        # 設定音訊輸入
-        audio_config = speechsdk.audio.AudioConfig(filename=audio_file_path)
+        logger.info("已設置發音評估配置")
+        
+        # 設定音訊輸入 - 使用絕對路徑
+        abs_path = os.path.abspath(audio_file_path)
+        logger.info(f"音頻檔案絕對路徑: {abs_path}")
+        audio_config = speechsdk.audio.AudioConfig(filename=abs_path)
+        
+        logger.info("已設置音訊輸入配置")
         
         # 創建語音識別器
         speech_recognizer = speechsdk.SpeechRecognizer(
             speech_config=speech_config, 
             audio_config=audio_config
         )
+        
+        logger.info("已創建語音識別器")
         
         # 應用發音評估配置
         pronunciation_assessment = pronunciation_config.apply_to(speech_recognizer)
@@ -550,7 +634,7 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
             # 計算總分
             overall_score = int((accuracy_score + pronunciation_score + completeness_score + fluency_score) / 4)
             
-            logger.info(f"發音評估完成，總分: {overall_score}")
+            logger.info(f"發音評估完成，總分: {overall_score}, 識別文字: {result.text}")
             return {
                 "success": True,
                 "recognized_text": result.text,
@@ -562,30 +646,34 @@ def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
                 "fluency_score": fluency_score
             }
         else:
-            logger.warning(f"語音識別失敗，原因: {result.reason}")
+            logger.warning(f"語音識別失敗，原因: {result.reason}, 詳細資訊: {result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'}")
             return {
                 "success": False,
-                "error": "無法識別語音",
-                "result_reason": result.reason
+                "error": f"無法識別語音，原因: {result.reason}",
+                "result_reason": result.reason,
+                "details": result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'
             }
     
     except Exception as e:
-        logger.error(f"發音評估過程中發生錯誤: {str(e)}")
+        logger.error(f"發音評估過程中發生錯誤: {str(e)}", exc_info=True)
         return {
             "success": False,
             "error": str(e)
         }
     finally:
-        # 清理臨時檔案
-        if os.path.exists(audio_file_path):
-            try:
-                os.remove(audio_file_path)
-                logger.info(f"已清除臨時檔案 {audio_file_path}")
-            except Exception as e:
-                logger.warning(f"清除臨時檔案失敗: {str(e)}")
-                pass
+        # 清理臨時檔案 - 但保留日誌
+        try:
+            # 不要立即刪除臨時檔案，可能需要進一步調試
+            # 可以在問題排除後重新添加這段代碼
+            # if os.path.exists(audio_file_path):
+            #     os.remove(audio_file_path)
+            #     logger.info(f"已清除臨時檔案 {audio_file_path}")
+            pass
+        except Exception as e:
+            logger.warning(f"清除臨時檔案失敗: {str(e)}")
+            pass
 
-# 處理音頻消息
+
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     """處理音頻消息，主要用於發音評估"""
@@ -600,6 +688,15 @@ def handle_audio_message(event):
             # 獲取音訊內容並上傳到 GCS
             audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
             
+            # 檢查音頻檔案路徑是否有效
+            if not audio_file_path or not os.path.exists(audio_file_path):
+                logger.error(f"音頻檔案路徑無效: {audio_file_path}")
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="處理您的錄音時發生錯誤，請重新嘗試。")
+                )
+                return
+                
             # 獲取當前詞彙
             word_key = user_data.get('current_vocab')
             if not word_key:
@@ -610,6 +707,7 @@ def handle_audio_message(event):
                 return
                 
             word_data = thai_data['basic_words'][word_key]
+            logger.info(f"正在評估用戶 {user_id} 的 '{word_key}' ({word_data['thai']}) 發音")
             
             # 使用Azure評估發音
             assessment_result = evaluate_pronunciation(
@@ -693,11 +791,11 @@ def handle_audio_message(event):
                     ]
                 )
         except Exception as e:
-            # 處理例外
-            logger.error(f"處理音頻時發生錯誤: {str(e)}")
+            # 改善錯誤訊息
+            logger.error(f"處理音頻時發生錯誤: {str(e)}", exc_info=True)  # 添加完整的錯誤堆疊追蹤
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=f"處理您的錄音時發生錯誤：{str(e)}\n請重新嘗試或聯繫系統管理員。")
+                TextSendMessage(text=f"處理您的錄音時發生錯誤。我們已記錄此問題並會盡快修復。請重新嘗試。")
             )
     else:
         line_bot_api.reply_message(
