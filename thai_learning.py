@@ -539,6 +539,117 @@ def process_audio_content_with_gcs(audio_content, user_id):
     except Exception as e:
         logger.error(f"音頻處理錯誤: {str(e)}")
         return None, None
+    
+def evaluate_pronunciation(audio_file_path, reference_text, language="th-TH"):
+    """使用Azure Speech Services進行發音評估"""
+    try:
+        logger.info(f"開始發音評估，參考文本: {reference_text}, 音頻檔案: {audio_file_path}")
+        
+        # 確認檔案存在
+        if not os.path.exists(audio_file_path):
+            logger.error(f"音頻檔案不存在: {audio_file_path}")
+            return {
+                "success": False,
+                "error": f"音頻檔案不存在: {audio_file_path}"
+            }
+            
+        # 檢查檔案大小
+        file_size = os.path.getsize(audio_file_path)
+        logger.info(f"音頻檔案大小: {file_size} 字節")
+        if file_size == 0:
+            logger.error("音頻檔案為空")
+            return {
+                "success": False,
+                "error": "音頻檔案為空"
+            }
+            
+        # 設定語音配置
+        speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
+        speech_config.speech_recognition_language = language
+        
+        logger.info("已設置 Speech Config")
+        
+        # 設定發音評估配置
+        pronunciation_config = speechsdk.PronunciationAssessmentConfig(
+            reference_text=reference_text,
+            grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
+            granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
+            enable_miscue=True
+        )
+        
+        logger.info("已設置發音評估配置")
+        
+        # 設定音訊輸入 - 使用絕對路徑
+        abs_path = os.path.abspath(audio_file_path)
+        logger.info(f"音頻檔案絕對路徑: {abs_path}")
+        audio_config = speechsdk.audio.AudioConfig(filename=abs_path)
+        
+        logger.info("已設置音訊輸入配置")
+        
+        # 創建語音識別器
+        speech_recognizer = speechsdk.SpeechRecognizer(
+            speech_config=speech_config, 
+            audio_config=audio_config
+        )
+        
+        logger.info("已創建語音識別器")
+        
+        # 應用發音評估配置
+        pronunciation_assessment = pronunciation_config.apply_to(speech_recognizer)
+        
+        # 開始識別
+        logger.info("開始識別語音...")
+        result = speech_recognizer.recognize_once_async().get()
+        
+        # 處理結果
+        if result.reason == speechsdk.ResultReason.RecognizedSpeech:
+            pronunciation_result = speechsdk.PronunciationAssessmentResult(result)
+            
+            # 獲取評估結果
+            accuracy_score = pronunciation_result.accuracy_score
+            pronunciation_score = pronunciation_result.pronunciation_score
+            completeness_score = pronunciation_result.completeness_score
+            fluency_score = pronunciation_result.fluency_score
+            
+            # 計算總分
+            overall_score = int((accuracy_score + pronunciation_score + completeness_score + fluency_score) / 4)
+            
+            logger.info(f"發音評估完成，總分: {overall_score}, 識別文字: {result.text}")
+            return {
+                "success": True,
+                "recognized_text": result.text,
+                "reference_text": reference_text,
+                "overall_score": overall_score,
+                "accuracy_score": accuracy_score,
+                "pronunciation_score": pronunciation_score,
+                "completeness_score": completeness_score,
+                "fluency_score": fluency_score
+            }
+        else:
+            logger.warning(f"語音識別失敗，原因: {result.reason}, 詳細資訊: {result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'}")
+            return {
+                "success": False,
+                "error": f"無法識別語音，原因: {result.reason}",
+                "result_reason": result.reason,
+                "details": result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'
+            }
+    
+    except Exception as e:
+        logger.error(f"發音評估過程中發生錯誤: {str(e)}", exc_info=True)
+        return {
+            "success": False,
+            "error": str(e)
+        }
+    finally:
+        # 保留臨時檔案以便調試
+        # 在問題排除後，可以重新啟用此代碼以清理臨時檔案
+        # try:
+        #     if os.path.exists(audio_file_path):
+        #         os.remove(audio_file_path)
+        #         logger.info(f"已清除臨時檔案 {audio_file_path}")
+        # except Exception as e:
+        #     logger.warning(f"清除臨時檔案失敗: {str(e)}")
+        pass
 
 def get_audio_content_with_gcs(message_id, user_id):
     """從LINE取得音訊內容並存儲到 GCS"""
