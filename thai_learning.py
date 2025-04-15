@@ -11,6 +11,7 @@ import requests
 import logging
 from dotenv import load_dotenv
 
+
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -22,6 +23,10 @@ from linebot.models import (
 )
 import azure.cognitiveservices.speech as speechsdk
 from google.cloud import storage
+from google.cloud import speech
+import difflib
+import tempfile
+
 
 # 設置日誌
 logging.basicConfig(
@@ -550,7 +555,8 @@ def process_audio_content_with_gcs(audio_content, user_id):
         return public_url, temp_wav
     except Exception as e:
         logger.error(f"音頻處理錯誤: {str(e)}")
-        return None, None
+        return None, Non
+    e
     
 def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改為空字符串
     """使用Azure Speech Services進行發音評估"""
@@ -705,6 +711,62 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
         # except Exception as e:
         #     logger.warning(f"清除臨時檔案失敗: {str(e)}")
         pass
+
+import json
+import os
+import tempfile
+from google.cloud import speech
+
+def init_google_speech_client():
+    creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+    if creds_json:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+            tmp.write(creds_json.encode("utf-8"))
+            tmp.flush()
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+    return speech.SpeechClient()
+
+
+
+def evaluate_pronunciation_google(gcs_audio_url, reference_text):
+    try:
+        client = init_google_speech_client()
+
+        audio = speech.RecognitionAudio(uri=gcs_audio_url)
+        config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            language_code="th-TH"
+        )
+
+        response = client.recognize(config=config, audio=audio)
+
+        if not response.results:
+            return {"success": False, "error": "無法辨識語音"}
+
+        top_result = response.results[0].alternatives[0]
+        recognized_text = top_result.transcript
+        confidence = top_result.confidence
+
+        similarity_ratio = difflib.SequenceMatcher(None, reference_text, recognized_text).ratio()
+        overall_score = int(similarity_ratio * 100)
+
+        return {
+            "success": True,
+            "reference_text": reference_text,
+            "recognized_text": recognized_text,
+            "confidence": confidence,
+            "overall_score": overall_score,
+            "accuracy_score": overall_score,
+            "pronunciation_score": overall_score,
+            "completeness_score": 100 if len(recognized_text) >= len(reference_text)*0.8 else 60,
+            "fluency_score": 80
+        }
+
+    except Exception as e:
+        logger.error(f"[Google STT 評分錯誤] {str(e)}")
+        return {"success": False, "error": str(e)}
+
 
 def get_audio_content_with_gcs(message_id, user_id):
     """從LINE取得音訊內容並存儲到 GCS"""
@@ -875,12 +937,9 @@ def handle_audio_message(event):
             word_data = thai_data['basic_words'][word_key]
             logger.info(f"正在評估用戶 {user_id} 的 '{word_key}' ({word_data['thai']}) 發音")
             
-            # 使用Azure評估發音
-            assessment_result = evaluate_pronunciation(
-                audio_file_path, 
-                word_data['thai'],
-                language="th-TH"
-            )
+            # 使用GOOGLE評估發音
+            assessment_result = evaluate_pronunciation_google(gcs_url, word_data['thai'])
+
             
             # 準備回應訊息
             if assessment_result["success"]:
