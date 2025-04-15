@@ -718,13 +718,14 @@ import tempfile
 from google.cloud import speech
 
 def init_google_speech_client():
-    creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+    creds_json = os.environ.get('GCS_CREDENTIALS')  # ✅ 改這裡
     if creds_json:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
             tmp.write(creds_json.encode("utf-8"))
             tmp.flush()
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
     return speech.SpeechClient()
+
 
 
 
