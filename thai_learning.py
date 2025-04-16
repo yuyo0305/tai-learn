@@ -2131,6 +2131,7 @@ def handle_text_message(event):
     
     # 主選單與基本導航
     if text == "開始學習" or text == "返回主選單":
+        exam_sessions.pop(user_id, None)  # ❗️清除考試狀態，避免干擾
         line_bot_api.reply_message(event.reply_token, show_main_menu())
     
     # 選擇主題
