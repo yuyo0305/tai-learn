@@ -785,10 +785,12 @@ def generate_exam(thai_data, category=None):
     all_words = thai_data['basic_words']
     
     # 篩選分類
-    if category:
-        word_items = {k: v for k, v in all_words.items() if v.get("category") == category}
-    else:
-        word_items = all_words
+if category:
+    category_words = thai_data["categories"][category]["words"]
+    word_items = {k: v for k, v in all_words.items() if k in category_words}
+else:
+    word_items = all_words
+
     
     selected_items = random.sample(list(word_items.items()), 10)
 
@@ -1129,14 +1131,14 @@ def handle_exam_message(event):
     message_text = event.message.text.strip()
 
     # 啟動考試
-    if message_text == "開始綜合考":
+    if message_text == "開始綜合考試":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data),
             "current": 0,
             "correct": 0
         }
         return send_exam_question(user_id)
-    if message_text == "開始數字考":
+    if message_text == "開始數字考試":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="numbers"),
             "current": 0,
@@ -1144,7 +1146,7 @@ def handle_exam_message(event):
         }
         return send_exam_question(user_id)
 
-    if message_text == "開始動物考":
+    if message_text == "開始動物考試":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="animals"),
             "current": 0,
@@ -1152,7 +1154,7 @@ def handle_exam_message(event):
         }
         return send_exam_question(user_id)
 
-    if message_text == "開始食物考":
+    if message_text == "開始食物考試":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="food"),
             "current": 0,
@@ -1160,7 +1162,7 @@ def handle_exam_message(event):
         }
         return send_exam_question(user_id)
 
-    if message_text == "開始交通工具考":
+    if message_text == "開始交通工具考試":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="transportation"),
             "current": 0,
