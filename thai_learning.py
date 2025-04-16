@@ -3,6 +3,8 @@ import os
 import uuid
 import random
 import json
+import firebase_admin
+from firebase_admin import credentials, firestore
 from datetime import datetime, timedelta
 import io
 import numpy as np
@@ -10,6 +12,7 @@ from pydub import AudioSegment
 import requests
 import logging
 from dotenv import load_dotenv
+from firebase_user_data import save_progress, load_progress
 
 
 from flask import Flask, request, abort
@@ -772,7 +775,41 @@ def evaluate_pronunciation_google(public_url, reference_text):
         logger.error(f"[Google STT 評分錯誤] {str(e)}")
         return {"success": False, "error": str(e)}
 
+# 初始化 Firebase（只跑一次）
+if not firebase_admin._apps:
+    creds_json = os.environ.get("FIREBASE_CREDENTIALS")
+    if not creds_json:
+        raise ValueError("❌ 沒有找到 FIREBASE_CREDENTIALS 環境變數")
 
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+        tmp.write(creds_json.encode("utf-8"))
+        tmp.flush()
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+        cred = credentials.Certificate(tmp.name)
+        firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+def save_progress(user_id, word, score):
+    ref = db.collection("users").document(user_id).collection("progress").document(word)
+    doc = ref.get()
+    times = 1
+    if doc.exists:
+        old = doc.to_dict()
+        times = old.get("times", 0) + 1
+    ref.set({
+        "score": score,
+        "last_practice": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "times": times
+    })
+
+def load_progress(user_id):
+    ref = db.collection("users").document(user_id).collection("progress")
+    docs = ref.stream()
+    progress = {}
+    for doc in docs:
+        progress[doc.id] = doc.to_dict()
+    return progress
 
 def get_audio_content_with_gcs(message_id, user_id):
     """從LINE取得音訊內容並存儲到 GCS"""
@@ -979,7 +1016,8 @@ def handle_audio_message(event):
                     user_data['vocab_mastery'][word_key]['audio_url'] = gcs_url  # 更新音頻 URL
                 
                 logger.info(f"用戶 {user_id} 的 '{word_key}' 發音評分: {score}")
-                
+                save_progress(user_id, word_key, score)
+
                 # 詳細評分內容
                 details = f"發音評估詳情：\n" \
                          f"整體評分：{score}/100\n" \
@@ -1221,43 +1259,33 @@ def start_tone_learning(user_id):
     return message_list
 
 def show_learning_progress(user_id):
-    """顯示用戶學習進度"""
-    logger.info(f"顯示學習進度，用戶ID: {user_id}")
-    user_data = user_data_manager.get_user_data(user_id)
-    
-    # 檢查是否有學習記錄
-    if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
+    """從 Firebase 顯示用戶學習進度"""
+    logger.info(f"📊 顯示學習進度，用戶ID: {user_id}")
+
+    # 從 Firestore 讀取進度
+    progress = load_progress(user_id)
+
+    if not progress:
         return TextSendMessage(text="您還沒有開始學習。請選擇「詞彙學習」或「發音練習」開始您的泰語學習之旅！")
-    
-    # 統計學習數據
-    total_words = len(user_data['vocab_mastery'])
-    total_practices = sum(data['practice_count'] for data in user_data['vocab_mastery'].values())
-    
-    # 計算平均分數
-    all_scores = []
-    for data in user_data['vocab_mastery'].values():
-        all_scores.extend(data['scores'])
-    
-    avg_score = sum(all_scores) / len(all_scores) if all_scores else 0
-    
-    # 找出最佳和需要改進的詞彙
-    if total_words > 0:
-        best_word = max(user_data['vocab_mastery'].items(), 
-                         key=lambda x: sum(x[1]['scores'])/len(x[1]['scores']) if x[1]['scores'] else 0)
-        worst_word = min(user_data['vocab_mastery'].items(), 
-                          key=lambda x: sum(x[1]['scores'])/len(x[1]['scores']) if x[1]['scores'] else 100)
-    
-    # 格式化進度報告
-    progress_report = f"學習進度報告：\n\n"
-    progress_report += f"已學習詞彙：{total_words} 個\n"
-    progress_report += f"練習次數：{total_practices} 次\n"
-    progress_report += f"平均發音評分：{avg_score:.1f}/100\n"
-    progress_report += f"學習連續天數：{user_data['streak']} 天\n\n"
-    
-    if total_words > 0:
-        progress_report += f"最佳發音詞彙：{best_word[0]} ({thai_data['basic_words'][best_word[0]]['thai']})\n"
-        progress_report += f"需要加強的詞彙：{worst_word[0]} ({thai_data['basic_words'][worst_word[0]]['thai']})"
-    
+
+    total_words = len(progress)
+    total_practices = sum(data.get("times", 1) for data in progress.values())
+    avg_score = sum(data.get("score", 0) for data in progress.values()) / total_words if total_words > 0 else 0
+
+    # 最佳與最弱詞彙
+    best_word = max(progress.items(), key=lambda x: x[1].get("score", 0))
+    worst_word = min(progress.items(), key=lambda x: x[1].get("score", 100))
+
+    # 生成報告
+    progress_report = f"📘 學習進度報告\n\n"
+    progress_report += f"🟦 已學習詞彙：{total_words} 個\n"
+    progress_report += f"🔁 總練習次數：{total_practices} 次\n"
+    progress_report += f"📈 平均發音評分：{avg_score:.1f}/100\n\n"
+    progress_report += f"🏆 最佳詞彙：{best_word[0]}（{thai_data['basic_words'].get(best_word[0], {}).get('thai', '')}）\n"
+    progress_report += f"🧩 需加強詞彙：{worst_word[0]}（{thai_data['basic_words'].get(worst_word[0], {}).get('thai', '')}）"
+
+    return TextSendMessage(text=progress_report)
+
     # 添加進度按鈕
     buttons_template = ButtonsTemplate(
         title="學習進度",
