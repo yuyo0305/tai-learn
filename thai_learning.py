@@ -2224,12 +2224,12 @@ def handle_text_message(event):
     elif text == "考試模式":
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='日常用語', text='開始日常用語考')),
-                QuickReplyButton(action=MessageAction(label='數字', text='開始數字考')),
-                QuickReplyButton(action=MessageAction(label='動物', text='開始動物考')),
-                QuickReplyButton(action=MessageAction(label='食物', text='開始食物考')),
-                QuickReplyButton(action=MessageAction(label='交通工具', text='開始交通工具考')),
-                QuickReplyButton(action=MessageAction(label='綜合考', text='開始綜合考'))
+                QuickReplyButton(action=MessageAction(label='日常用語', text='開始日常用語考試')),
+                QuickReplyButton(action=MessageAction(label='數字', text='開始數字考試')),
+                QuickReplyButton(action=MessageAction(label='動物', text='開始動物考試')),
+                QuickReplyButton(action=MessageAction(label='食物', text='開始食物考試')),
+                QuickReplyButton(action=MessageAction(label='交通工具', text='開始交通工具考試')),
+                QuickReplyButton(action=MessageAction(label='綜合考試', text='開始綜合開考試'))
             ]
         )
         line_bot_api.reply_message(
