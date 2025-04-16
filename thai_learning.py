@@ -729,11 +729,15 @@ def init_google_speech_client():
 
 
 
-def evaluate_pronunciation_google(gcs_audio_url, reference_text):
+def evaluate_pronunciation_google(public_url, reference_text):
     try:
+        # 將公開網址轉換為 GCS 格式
+        gcs_path = public_url.replace("https://storage.googleapis.com/", "gs://")
+        logger.info(f"🎯 Google STT 使用音檔：{gcs_path}")
+
         client = init_google_speech_client()
 
-        audio = speech.RecognitionAudio(uri=gcs_audio_url)
+        audio = speech.RecognitionAudio(uri=gcs_path)
         config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=16000,
@@ -767,6 +771,7 @@ def evaluate_pronunciation_google(gcs_audio_url, reference_text):
     except Exception as e:
         logger.error(f"[Google STT 評分錯誤] {str(e)}")
         return {"success": False, "error": str(e)}
+
 
 
 def get_audio_content_with_gcs(message_id, user_id):
