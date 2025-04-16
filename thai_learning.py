@@ -785,13 +785,12 @@ def generate_exam(thai_data, category=None):
     all_words = thai_data['basic_words']
     
     # 篩選分類
-if category:
-    category_words = thai_data["categories"][category]["words"]
-    word_items = {k: v for k, v in all_words.items() if k in category_words}
-else:
-    word_items = all_words
+    if category:
+        category_words = thai_data["categories"][category]["words"]
+        word_items = {k: v for k, v in all_words.items() if k in category_words}
+    else:
+        word_items = all_words
 
-    
     selected_items = random.sample(list(word_items.items()), 10)
 
     # 題目格式化
@@ -802,8 +801,7 @@ else:
             questions.append({
                 "type": q_type,
                 "word": key,
-                "image_url": item.get("image_url")
-,
+                "image_url": item.get("image_url"),
                 "thai": item["thai"],
             })
         else:
@@ -821,6 +819,8 @@ else:
             })
 
     return questions
+
+
 
 def score_pronunciation(user_text, correct_text):
     ratio = SequenceMatcher(None, user_text.strip(), correct_text.strip()).ratio()
