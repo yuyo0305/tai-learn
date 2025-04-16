@@ -12,6 +12,9 @@ from pydub import AudioSegment
 import requests
 import logging
 from dotenv import load_dotenv
+import random
+from difflib import SequenceMatcher
+from linebot.models import TextSendMessage, ImageSendMessage, QuickReply, QuickReplyButton, MessageAction
 
 
 
@@ -43,6 +46,7 @@ load_dotenv()  # 載入 .env 文件中的環境變數 (本地開發用)
 
 # === 應用初始化 ===
 app = Flask(__name__)
+exam_sessions = {}  # user_id 對應目前考試狀態
 
 # LINE Bot設定
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', 'YOUR_CHANNEL_ACCESS_TOKEN')
@@ -775,6 +779,54 @@ def evaluate_pronunciation_google(public_url, reference_text):
         logger.error(f"[Google STT 評分錯誤] {str(e)}")
         return {"success": False, "error": str(e)}
 
+# === 考試模組 ===
+
+def generate_exam(thai_data, category=None):
+    all_words = thai_data['basic_words']
+    
+    # 篩選分類
+    if category:
+        word_items = {k: v for k, v in all_words.items() if v.get("category") == category}
+    else:
+        word_items = all_words
+    
+    selected_items = random.sample(list(word_items.items()), 10)
+
+    # 題目格式化
+    questions = []
+    for i, (key, item) in enumerate(selected_items):
+        if i < 5:
+            q_type = "pronounce"
+            questions.append({
+                "type": q_type,
+                "word": key,
+                "image_url": item.get("image_url")
+,
+                "thai": item["thai"],
+            })
+        else:
+            # audio_choice 題型：播放音檔選圖片
+            all_choices = random.sample(list(word_items.items()), 3)
+            correct = random.choice(all_choices)
+            questions.append({
+                "type": "audio_choice",
+                "audio_url": correct[1].get("audio_url"),
+                "choices": [
+                    {"word": w[0], "image_url": w[1].get("image_url")}
+                    for w in all_choices
+                ],
+                "answer": correct[0]
+            })
+
+    return questions
+
+def score_pronunciation(user_text, correct_text):
+    ratio = SequenceMatcher(None, user_text.strip(), correct_text.strip()).ratio()
+    return ratio >= 0.7
+
+def score_image_choice(user_choice, correct_answer):
+    return user_choice == correct_answer
+
 # 初始化 Firebase（只跑一次）
 if not firebase_admin._apps:
     creds_json = os.environ.get("FIREBASE_CREDENTIALS")
@@ -1071,6 +1123,114 @@ def handle_audio_message(event):
             event.reply_token,
             TextSendMessage(text="請先選擇「練習發音」開始發音練習")
         )
+
+def handle_exam_message(event):
+    user_id = event.source.user_id
+    message_text = event.message.text.strip()
+
+    # 啟動考試
+    if message_text == "開始綜合考":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+    if message_text == "開始數字考":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="numbers"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+
+    if message_text == "開始動物考":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="animals"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+
+    if message_text == "開始食物考":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="food"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+
+    if message_text == "開始交通工具考":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="transportation"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+    # 正在考試狀態中（處理作答）
+    if user_id in exam_sessions:
+        session = exam_sessions[user_id]
+        question = session["questions"][session["current"]]
+
+        # 判斷答題類型
+        if question["type"] == "audio_choice":
+            user_answer = message_text.strip()
+            if score_image_choice(user_answer, question["answer"]):
+                session["correct"] += 1
+
+        # 換下一題
+                session["current"] += 1
+        if session["current"] >= len(session["questions"]):
+            total = len(session["questions"])
+            score = session["correct"]
+
+            # ✅ 儲存考試結果到 Firebase
+            save_exam_result(user_id, score, total, exam_type="綜合考試")
+
+            del exam_sessions[user_id]
+            return TextSendMessage(text=f"✅ 考試結束！\n您答對了 {score}/{total} 題。")
+
+        return send_exam_question(user_id)
+
+
+    # 非考試狀態，交由其他處理
+    return None
+def send_exam_question(user_id):
+    session = exam_sessions[user_id]
+    question = session["questions"][session["current"]]
+    q_num = session["current"] + 1
+
+    if question["type"] == "pronounce":
+        return [
+            TextSendMessage(text=f"第 {q_num} 題：請看到圖片後唸出對應泰文"),
+            ImageSendMessage(original_content_url=question["image_url"], preview_image_url=question["image_url"])
+        ]
+
+    elif question["type"] == "audio_choice":
+        audio_url = question["audio_url"]
+        options = question["choices"]
+
+        quick_reply_items = [
+            QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"]))
+            for opt in options
+        ]
+
+        return [
+            TextSendMessage(text=f"第 {q_num} 題：請聽音檔後從以下圖片選出正確答案"),
+            TextSendMessage(text=audio_url),
+            TextSendMessage(text="請選擇：", quick_reply=QuickReply(items=quick_reply_items))
+        ]
+#=== 考試結果儲存 ===    
+def save_exam_result(user_id, score, total, exam_type="綜合考試"):
+    ref = db.collection("users").document(user_id).collection("exams").document()
+    ref.set({
+        "exam_type": exam_type,
+        "score": score,
+        "total": total,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+    logger.info(f"✅ 用戶 {user_id} 考試結果已儲存：{score}/{total}")
+     
         # === 第四部分：學習功能模塊 ===
 
 # === 學習功能和選單 ===
@@ -1314,7 +1474,8 @@ def show_main_menu():
             QuickReplyButton(action=MessageAction(label='發音練習', text='練習發音')),
             QuickReplyButton(action=MessageAction(label='音調學習', text='音調學習')),
             QuickReplyButton(action=MessageAction(label='記憶遊戲', text='開始記憶遊戲')),
-            QuickReplyButton(action=MessageAction(label='學習進度', text='學習進度'))
+            QuickReplyButton(action=MessageAction(label='學習進度', text='學習進度')),
+             QuickReplyButton(action=MessageAction(label='考試模式', text='考試模式'))
         ]
     )
     
@@ -1926,7 +2087,6 @@ def create_flex_memory_game(cards, game_state, user_id):
         logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
         return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
 
-# === 文字訊息處理 ===
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     """處理文字訊息"""
@@ -1936,14 +2096,24 @@ def handle_text_message(event):
     
     logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
     
+    # ✅ 處理考試模式
+    result = handle_exam_message(event)
+    if result:
+        if isinstance(result, list):
+            line_bot_api.reply_message(event.reply_token, result)
+        else:
+            line_bot_api.reply_message(event.reply_token, [result])
+        return
+
     # 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
-    
+
     # 記憶遊戲相關指令
     if text == "開始記憶遊戲" or text.startswith("記憶遊戲主題:") or text.startswith("翻牌:") or text.startswith("已翻開:") or text.startswith("播放音頻:"):
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
+
     
     # 播放音頻請求
     if text.startswith("播放音頻:"):
@@ -2052,7 +2222,27 @@ def handle_text_message(event):
             event.reply_token,
             TextSendMessage(text=calendar_message)
         )
-    
+    elif text == "考試模式":
+        quick_reply = QuickReply(
+            items=[
+                QuickReplyButton(action=MessageAction(label='日常用語', text='開始日常用語考')),
+                QuickReplyButton(action=MessageAction(label='數字', text='開始數字考')),
+                QuickReplyButton(action=MessageAction(label='動物', text='開始動物考')),
+                QuickReplyButton(action=MessageAction(label='食物', text='開始食物考')),
+                QuickReplyButton(action=MessageAction(label='交通工具', text='開始交通工具考')),
+                QuickReplyButton(action=MessageAction(label='綜合考', text='開始綜合考'))
+            ]
+        )
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(
+                text="請選擇要進行的考試類別：",
+                quick_reply=quick_reply
+            )
+        )
+        return
+
+
     else:
         # 默認回覆
         line_bot_api.reply_message(
