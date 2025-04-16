@@ -12,7 +12,7 @@ from pydub import AudioSegment
 import requests
 import logging
 from dotenv import load_dotenv
-from firebase_user_data import save_progress, load_progress
+
 
 
 from flask import Flask, request, abort
