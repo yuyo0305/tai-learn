@@ -2129,23 +2129,17 @@ def create_flex_memory_game(cards, game_state, user_id):
         logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
         return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
 
-@handler.add(MessageEvent, message=TextMessage)
-def handle_text_message(event):
-    """處理文字訊息"""
-    text = event.message.text
-    user_id = event.source.user_id
-    user_data = user_data_manager.get_user_data(user_id)
-    
-    logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
-    
-    # ✅ 處理考試模式
-    result = handle_exam_message(event)
-    if result:
-        if isinstance(result, list):
-            line_bot_api.reply_message(event.reply_token, result)
-        else:
-            line_bot_api.reply_message(event.reply_token, [result])
-        return
+    # ✅ 考試指令過濾（只有在符合格式才執行）
+    if text.startswith("開始") and "考" in text:
+        result = handle_exam_message(event)
+        if result:
+            if isinstance(result, list):
+                line_bot_api.reply_message(event.reply_token, result)
+            else:
+                line_bot_api.reply_message(event.reply_token, [result])
+            return
+
+
 
     # 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
