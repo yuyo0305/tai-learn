@@ -1006,7 +1006,49 @@ def handle_audio_message(event):
     user_data = user_data_manager.get_user_data(user_id)
     
     logger.info(f"收到用戶 {user_id} 的音頻訊息")
-    
+    # ✅ 判斷是否為考試模式（新增）
+    if user_id in exam_sessions:
+        logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
+        session = exam_sessions[user_id]
+        current_q = session["questions"][session["current"]]
+
+        if current_q["type"] == "pronounce":
+            # 處理語音辨識與比對
+            audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
+            transcript = transcribe_audio_google(audio_file_path)
+            os.remove(audio_file_path)
+
+            if not transcript:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="❌ 無法辨識語音，請再試一次。")
+                )
+                return
+
+            correct_word = current_q["thai"]
+            is_correct = score_pronunciation(transcript, correct_word)
+
+            if is_correct:
+                session["correct"] += 1
+                result_text = "✅ 回答正確！"
+            else:
+                result_text = f"❌ 回答錯誤，正確答案是：{correct_word}"
+
+            session["current"] += 1
+            if session["current"] >= len(session["questions"]):
+                total = len(session["questions"])
+                score = session["correct"]
+                del exam_sessions[user_id]
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=f"{result_text}\n\n📋 考試結束！您答對了 {score}/{total} 題。")
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [TextSendMessage(text=result_text), send_exam_question(user_id)]
+                )
+            return
     # 檢查用戶是否在發音練習中
     if user_data.get('current_activity') == 'echo_practice':
         try:
