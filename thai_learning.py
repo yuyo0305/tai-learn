@@ -1015,7 +1015,8 @@ def handle_audio_message(event):
         if current_q["type"] == "pronounce":
             # 處理語音辨識與比對
             audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
-            transcript = transcribe_audio_google(audio_file_path)
+            transcript = speech_to_text_google(audio_file_path)
+
             os.remove(audio_file_path)
 
             if not transcript:
