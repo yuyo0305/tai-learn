@@ -1190,7 +1190,7 @@ def handle_text_message(event):
             if isinstance(result, list):
                 line_bot_api.reply_message(event.reply_token, result)
             else:
-                line_bot_api.reply_message(event.reply_token, [result])
+                line_bot_api.reply_message(event.reply_token, result)
             return
     
     # 更新用戶活躍狀態
@@ -2306,7 +2306,7 @@ def create_flex_memory_game(cards, game_state, user_id):
             if isinstance(result, list):
                 line_bot_api.reply_message(event.reply_token, result)
             else:
-                line_bot_api.reply_message(event.reply_token, [result])
+                line_bot_api.reply_message(event.reply_token, result)
             return
 
 
