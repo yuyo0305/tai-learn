@@ -460,57 +460,7 @@ def get_audio_content(message_id):
         audio_content += chunk
     return audio_content
 
-def process_audio_content_with_gcs(audio_content, user_id):
-    """處理音頻內容並上傳到 GCS"""
-    try:
-        # 創建臨時目錄
-        temp_dir = os.environ.get('TEMP', '/tmp')
-        audio_dir = os.path.join(temp_dir, 'temp_audio')
-        os.makedirs(audio_dir, exist_ok=True)
-        
-        # 生成唯一的文件名
-        audio_id = f"{user_id}_{uuid.uuid4()}"
-        temp_m4a = os.path.join(audio_dir, f'temp_{audio_id}.m4a')
-        temp_wav = os.path.join(audio_dir, f'temp_{audio_id}.wav')
-        
-        logger.info(f"保存原始音頻到 {temp_m4a}")
-        # 保存原始音頻
-        with open(temp_m4a, 'wb') as f:
-            f.write(audio_content)
-        
-        logger.info("使用 pydub 轉換音頻格式")
-        # 使用 pydub 轉換格式 - 使用 Azure 推薦的格式
-        audio = AudioSegment.from_file(temp_m4a)
-        audio_wav = audio_m4a.set_frame_rate(16000).set_sample_width(2).set_channels(1)
-        audio.export(temp_wav, format='wav')
-        
-        # 確認 WAV 檔案已成功創建
-        if not os.path.exists(temp_wav):
-            logger.error(f"WAV 檔案創建失敗: {temp_wav}")
-            return None, None
-            
-        logger.info(f"音頻轉換成功，WAV 檔案路徑: {temp_wav}")
-            
-        # 上傳到 GCS
-        gcs_path = f"user_audio/{audio_id}.wav"
-        
-        # 重新打開檔案用於上傳（確保檔案指針在起始位置）
-        with open(temp_wav, 'rb') as wav_file:
-            public_url = upload_file_to_gcs(wav_file, gcs_path, "audio/wav")
-        
-        # 清除臨時文件（不要清除 temp_wav，因為後續需要使用）
-        try:
-            os.remove(temp_m4a)
-            logger.info(f"已清除臨時文件 {temp_m4a}")
-        except Exception as e:
-            logger.warning(f"清除臨時文件失敗: {str(e)}")
-            pass
-        
-        # 如果 GCS 上傳失敗，返回本地路徑仍舊有效
-        return public_url, temp_wav
-    except Exception as e:
-        logger.error(f"音頻處理錯誤: {str(e)}")
-        return None, None
+
 
 def process_audio_content_with_gcs(audio_content, user_id):
     """處理音頻內容並上傳到 GCS"""
@@ -1224,6 +1174,167 @@ def handle_audio_message(event):
             event.reply_token,
             TextSendMessage(text="請先選擇「練習發音」開始發音練習")
         )
+@handler.add(MessageEvent, message=TextMessage)
+def handle_text_message(event):
+    """處理文字訊息"""
+    user_id = event.source.user_id
+    user_data = user_data_manager.get_user_data(user_id)
+    text = event.message.text
+    
+    logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
+    
+    # ✅ 考試指令過濾（只有在符合格式才執行）
+    if text.startswith("開始") and "考" in text:
+        result = handle_exam_message(event)
+        if result:
+            if isinstance(result, list):
+                line_bot_api.reply_message(event.reply_token, result)
+            else:
+                line_bot_api.reply_message(event.reply_token, [result])
+            return
+    
+    # 更新用戶活躍狀態
+    user_data_manager.update_streak(user_id)
+
+    # 記憶遊戲相關指令
+    if text == "開始記憶遊戲" or text.startswith("記憶遊戲主題:") or text.startswith("翻牌:") or text.startswith("已翻開:") or text.startswith("播放音頻:"):
+        game_response = handle_memory_game(user_id, text)
+        line_bot_api.reply_message(event.reply_token, game_response)
+        return
+    
+    # 播放音頻請求
+    if text.startswith("播放音頻:"):
+        word = text[5:]  # 提取詞彙
+        if word in thai_data['basic_words']:
+            word_data = thai_data['basic_words'][word]
+            if 'audio_url' in word_data and word_data['audio_url']:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    AudioSendMessage(
+                        original_content_url=word_data['audio_url'],
+                        duration=3000  # 假設音訊長度為3秒
+                    )
+                )
+                return
+    
+    # 主選單與基本導航
+    if text == "開始學習" or text == "返回主選單":
+        exam_sessions.pop(user_id, None)  # ❗️清除考試狀態，避免干擾
+        line_bot_api.reply_message(event.reply_token, show_main_menu())
+    
+    # 選擇主題
+    elif text == "選擇主題":
+        line_bot_api.reply_message(event.reply_token, show_category_menu())
+    
+    # 主題選擇處理
+    elif text.startswith("主題:"):
+        category = text[3:]  # 取出主題名稱
+        # 轉換成英文鍵值
+        category_map = {
+            "日常用語": "daily_phrases",
+            "數字": "numbers",
+            "動物": "animals",
+            "食物": "food",
+            "交通工具": "transportation"
+        }
+        if category in category_map:
+            eng_category = category_map[category]
+            user_data['current_category'] = eng_category
+            messages = start_image_learning(user_id, eng_category)
+            line_bot_api.reply_message(event.reply_token, messages)
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
+            )
+    
+    # 學習模式選擇
+    elif text == "詞彙學習":
+        messages = start_image_learning(user_id)
+        line_bot_api.reply_message(event.reply_token, messages)
+    
+    elif text == "練習發音":
+        messages = start_echo_practice(user_id)
+        line_bot_api.reply_message(event.reply_token, messages)
+    
+    elif text == "音調學習":
+        messages = start_tone_learning(user_id)
+        line_bot_api.reply_message(event.reply_token, messages)
+    
+    # 進度與導航控制
+    elif text == "下一個詞彙":
+        # 如果有當前主題，在同一主題中選擇新詞彙
+        if user_data.get('current_category'):
+            category = user_data['current_category']
+            user_data['current_vocab'] = random.choice(thai_data['categories'][category]['words'])
+        else:
+            # 否則清除當前詞彙，隨機選擇
+            user_data['current_vocab'] = None
+        
+        messages = start_image_learning(user_id)
+        line_bot_api.reply_message(event.reply_token, messages)
+    
+    elif text == "學習進度":
+        progress_message = show_learning_progress(user_id)
+        line_bot_api.reply_message(event.reply_token, progress_message)
+    
+    elif text == "練習弱點":
+        # 找出評分最低的詞彙進行練習
+        if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="您還沒有足夠的學習記錄，請先進行一些詞彙學習和發音練習！")
+            )
+            return
+            
+        # 找出分數最低的詞彙
+        worst_word = min(user_data['vocab_mastery'].items(), 
+                      key=lambda x: sum(x[1]['scores'])/len(x[1]['scores']) if x[1]['scores'] else 100)
+        
+        # 設置為當前詞彙並啟動練習
+        user_data['current_vocab'] = worst_word[0]
+        messages = start_echo_practice(user_id)
+        line_bot_api.reply_message(event.reply_token, messages)
+    
+    elif text == "學習日曆":
+        # 顯示用戶的學習日曆和連續學習天數
+        streak = user_data.get('streak', 0)
+        last_active = user_data.get('last_active', '尚未開始學習')
+        
+        calendar_message = f"您的學習記錄：\n\n"
+        calendar_message += f"連續學習天數：{streak} 天\n"
+        calendar_message += f"最近學習日期：{last_active}\n\n"
+        calendar_message += "繼續保持學習熱情！每天學習一點，泰語能力會穩步提高。"
+        
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=calendar_message)
+        )
+    elif text == "考試模式":
+        quick_reply = QuickReply(
+            items=[
+                QuickReplyButton(action=MessageAction(label='日常用語', text='開始日常用語考試')),
+                QuickReplyButton(action=MessageAction(label='數字', text='開始數字考試')),
+                QuickReplyButton(action=MessageAction(label='動物', text='開始動物考試')),
+                QuickReplyButton(action=MessageAction(label='食物', text='開始食物考試')),
+                QuickReplyButton(action=MessageAction(label='交通工具', text='開始交通工具考試')),
+                QuickReplyButton(action=MessageAction(label='綜合考試', text='開始綜合考試'))
+            ]
+        )
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(
+                text="請選擇要進行的考試類別：",
+                quick_reply=quick_reply
+            )
+        )
+        return
+    else:
+        # 默認回覆
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
+        )
 
 def handle_exam_message(event):
     user_id = event.source.user_id
@@ -1314,16 +1425,16 @@ def send_exam_question(user_id):
         quick_reply_items = [
             QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"]))
             for opt in options
-    ]
+        ]
 
-    return [
-        TextSendMessage(text=f"第 {q_num} 題：請聽音檔後從以下選項選出正確答案"),
-        AudioSendMessage(
-            original_content_url=audio_url,
-            duration=3000  # 假設音訊長度為3秒
-        ),
-        TextSendMessage(text="請選擇：", quick_reply=QuickReply(items=quick_reply_items))
-    ]
+        return [
+            TextSendMessage(text=f"第 {q_num} 題：請聽音檔後從以下選項選出正確答案"),
+            AudioSendMessage(
+                original_content_url=audio_url,
+                duration=3000  # 假設音訊長度為3秒
+            ),
+            TextSendMessage(text="請選擇：", quick_reply=QuickReply(items=quick_reply_items))
+        ]
 #=== 考試結果儲存 ===    
 def save_exam_result(user_id, score, total, exam_type="綜合考試"):
     ref = db.collection("users").document(user_id).collection("exams").document()
