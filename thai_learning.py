@@ -762,6 +762,24 @@ def evaluate_pronunciation_google(public_url, reference_text):
         logger.error(f"[Google STT 評分錯誤] {str(e)}")
         return {"success": False, "error": str(e)}
 
+def transcribe_audio_google(gcs_url):
+    """呼叫 Google Speech-to-Text API 轉文字"""
+    client = init_google_speech_client()
+
+    audio = speech.RecognitionAudio(uri=gcs_url)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code="th-TH"
+    )
+
+    response = client.recognize(config=config, audio=audio)
+
+    if not response.results:
+        raise ValueError("無法辨識語音")
+
+    return response.results[0].alternatives[0].transcript
+
 # === 考試模組 ===
 
 def generate_exam(thai_data, category=None):
