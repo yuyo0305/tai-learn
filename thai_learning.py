@@ -987,8 +987,9 @@ def handle_audio_message(event):
     """處理音頻消息，主要用於發音評估"""
     user_id = event.source.user_id
     user_data = user_data_manager.get_user_data(user_id)
-    
+
     logger.info(f"收到用戶 {user_id} 的音頻訊息")
+
     # 判斷是否為考試模式
     if user_id in exam_sessions:
         logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
@@ -996,179 +997,80 @@ def handle_audio_message(event):
         current_q = session["questions"][session["current"]]
 
         if current_q["type"] == "pronounce":
-            # 處理語音辨識與比對
             audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
-            
-            # 確保音頻文件存在
+
             if not audio_file_path or not os.path.exists(audio_file_path):
                 line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="❌ 處理您的錄音時出現問題，請再試一次。")
+                    event.reply_token, TextSendMessage(text="❌ 找不到音訊檔案，請再試一次")
                 )
                 return
-                
-            # 使用 Google 語音識別
-            transcript = speech_to_text_google(audio_file_path)
-            
-            # 清理臨時文件
+
             try:
-                os.remove(audio_file_path)
-                logger.info(f"已移除臨時音頻文件 {audio_file_path}")
+                recognized_text = transcribe_audio_google(gcs_url)
+                logger.info(f"識別文字: {recognized_text}")
             except Exception as e:
-                logger.warning(f"移除臨時文件失敗: {str(e)}")
-
-            if not transcript:
+                logger.error(f"語音識別失敗: {str(e)}")
                 line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="❌ 無法辨識語音，請再試一次。")
+                    event.reply_token, TextSendMessage(text="❌ 語音識別失敗，請再試一次")
                 )
                 return
+            finally:
+                if os.path.exists(audio_file_path):
+                    os.remove(audio_file_path)
+                    logger.info(f"已移除臨時音頻文件 {audio_file_path}")
 
-            correct_word = current_q["thai"]
-            is_correct = score_pronunciation(transcript, correct_word)
-            
-            # 紀錄學習數據
-            save_progress(user_id, current_q.get("word", "unknown"), 100 if is_correct else 60)
-
+            is_correct = score_pronunciation(recognized_text, current_q["thai"])
             if is_correct:
                 session["correct"] += 1
-                result_text = "✅ 回答正確！"
+                feedback = TextSendMessage(text="✅ 正確！")
             else:
-                result_text = f"❌ 回答錯誤，正確答案是：{correct_word}"
+                feedback = TextSendMessage(text=f"❌ 錯誤，正確答案是「{current_q['thai']}」")
 
             session["current"] += 1
             if session["current"] >= len(session["questions"]):
+                final_score = session["correct"]
                 total = len(session["questions"])
-                score = session["correct"]
-                
-                # 儲存考試結果
-                save_exam_result(user_id, score, total, exam_type="發音考試")
-                
                 del exam_sessions[user_id]
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text=f"{result_text}\n\n📋 考試結束！您答對了 {score}/{total} 題。")
-                )
+                summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
+                line_bot_api.reply_message(event.reply_token, [feedback, summary])
             else:
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    [TextSendMessage(text=result_text), send_exam_question(user_id)]
-                )
+                next_q = send_exam_question(user_id)
+                reply = [feedback, next_q] if isinstance(next_q, (list, tuple)) else [feedback, next_q]
+                line_bot_api.reply_message(event.reply_token, reply)
             return
-    
-    # 檢查用戶是否在發音練習中
+
+    # 若非考試流程，走回音練習
     if user_data.get('current_activity') == 'echo_practice':
         try:
-            # 獲取音訊內容並上傳到 GCS
             audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
-            
-            # 檢查音頻檔案路徑是否有效
+
             if not audio_file_path or not os.path.exists(audio_file_path):
                 logger.error(f"音頻檔案路徑無效: {audio_file_path}")
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="處理您的錄音時發生錯誤，請重新嘗試。")
+                    TextSendMessage(text="❌ 找不到音訊檔案，請再試一次")
                 )
                 return
-                
-            # 獲取當前詞彙
-            word_key = user_data.get('current_vocab')
-            if not word_key:
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="請先選擇一個詞彙進行學習")
-                )
-                return
-                
-            word_data = thai_data['basic_words'][word_key]
-            logger.info(f"正在評估用戶 {user_id} 的 '{word_key}' ({word_data['thai']}) 發音")
-            
-            # 使用GOOGLE評估發音
-            assessment_result = evaluate_pronunciation_google(gcs_url, word_data['thai'])
 
-            
-            # 準備回應訊息
-            if assessment_result["success"]:
-                score = assessment_result["overall_score"]
-                
-                # 根據分數生成反饋
-                if score >= 90:
-                    feedback = f"太棒了！您的 '{word_key}' ({word_data['thai']}) 發音非常準確。"
-                elif score >= 75:
-                    feedback = f"做得好！您的 '{word_key}' ({word_data['thai']}) 發音清晰，繼續保持。"
-                elif score >= 60:
-                    feedback = f"不錯的嘗試。您的 '{word_key}' ({word_data['thai']}) 發音基本正確，但可以再加強音調。"
-                else:
-                    feedback = f"繼續練習！注意 '{word_key}' ({word_data['thai']}) 的音調變化，可多聽幾次標準發音。"
-                
-                # 更新用戶學習進度
-                if 'vocab_mastery' not in user_data:
-                    user_data['vocab_mastery'] = {}
-                
-                if word_key not in user_data['vocab_mastery']:
-                    user_data['vocab_mastery'][word_key] = {
-                        'practice_count': 1,
-                        'scores': [score],
-                        'last_practiced': datetime.now().strftime("%Y-%m-%d"),
-                        'audio_url': gcs_url  # 保存用戶的音頻 URL
-                    }
-                else:
-                    user_data['vocab_mastery'][word_key]['practice_count'] += 1
-                    user_data['vocab_mastery'][word_key]['scores'].append(score)
-                    user_data['vocab_mastery'][word_key]['last_practiced'] = datetime.now().strftime("%Y-%m-%d")
-                    user_data['vocab_mastery'][word_key]['audio_url'] = gcs_url  # 更新音頻 URL
-                
-                logger.info(f"用戶 {user_id} 的 '{word_key}' 發音評分: {score}")
-                save_progress(user_id, word_key, score)
+            result = evaluate_pronunciation_google(gcs_url, user_data.get('current_vocab_thai', ''))
+            logger.info(f"評估結果: {result}")
 
-                # 詳細評分內容
-                details = f"發音評估詳情：\n" \
-                         f"整體評分：{score}/100\n" \
-                         f"準確度：{assessment_result['accuracy_score']}/100\n" \
-                         f"發音清晰度：{assessment_result['pronunciation_score']}/100\n" \
-                         f"完整度：{assessment_result['completeness_score']}/100\n" \
-                         f"流暢度：{assessment_result['fluency_score']}/100"
-                
-                # 建立回覆訊息
-                messages = [
-                    TextSendMessage(text=f"發音評分：{score}/100"),
-                    TextSendMessage(text=feedback),
-                    TextSendMessage(text=details)
-                ]
-                
-                # 添加選項按鈕
-                buttons_template = ButtonsTemplate(
-                    title="發音評估結果",
-                    text="請選擇下一步",
-                    actions=[
-                        MessageAction(label="再次練習", text="練習發音"),
-                        MessageAction(label="下一個詞彙", text="下一個詞彙"),
-                        MessageAction(label="返回主選單", text="返回主選單")
-                    ]
-                )
-                messages.append(
-                    TemplateSendMessage(alt_text="發音評估選項", template=buttons_template)
-                )
-                
-                line_bot_api.reply_message(event.reply_token, messages)
+            if result["success"]:
+                score = result["overall_score"]
+                save_progress(user_id, user_data["current_vocab"], score)
+                feedback = f"✅ 評分完成：{score} 分\n你說的是：「{result['recognized_text']}」"
             else:
-                # 發生錯誤
-                error_msg = assessment_result.get("error", "未知錯誤")
-                logger.error(f"發音評估失敗: {error_msg}")
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    [
-                        TextSendMessage(text=f"發音評估失敗：{error_msg}"),
-                        TextSendMessage(text="請重新嘗試發音，或選擇其他詞彙學習")
-                    ]
-                )
+                feedback = f"❌ 評分失敗：{result['error']}"
+
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=feedback))
+
         except Exception as e:
-            # 改善錯誤訊息
-            logger.error(f"處理音頻時發生錯誤: {str(e)}", exc_info=True)  # 添加完整的錯誤堆疊追蹤
+            logger.error(f"處理音頻時發生錯誤: {str(e)}", exc_info=True)
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=f"處理您的錄音時發生錯誤。我們已記錄此問題並會盡快修復。請重新嘗試。")
+                TextSendMessage(text="❌ 發生錯誤，請稍後再試")
             )
+
     else:
         line_bot_api.reply_message(
             event.reply_token,
