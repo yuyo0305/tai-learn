@@ -734,7 +734,40 @@ def init_google_speech_client():
     return speech.SpeechClient()
 
 
-
+def speech_to_text_google(audio_file_path):
+    """將音頻文件轉換為文字使用 Google Speech-to-Text"""
+    try:
+        client = init_google_speech_client()
+        
+        # 檢查檔案是否存在
+        if not os.path.exists(audio_file_path):
+            logger.error(f"音頻檔案不存在: {audio_file_path}")
+            return None
+            
+        # 讀取音頻文件
+        with open(audio_file_path, "rb") as audio_file:
+            content = audio_file.read()
+            
+        audio = speech.RecognitionAudio(content=content)
+        config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            language_code="th-TH"
+        )
+        
+        response = client.recognize(config=config, audio=audio)
+        
+        if not response.results:
+            logger.warning("無法識別音頻內容")
+            return None
+            
+        transcript = response.results[0].alternatives[0].transcript
+        logger.info(f"識別文字: {transcript}")
+        return transcript
+        
+    except Exception as e:
+        logger.error(f"轉換音頻為文字時發生錯誤: {str(e)}", exc_info=True)
+        return None
 
 def evaluate_pronunciation_google(public_url, reference_text):
     try:
@@ -1006,7 +1039,7 @@ def handle_audio_message(event):
     user_data = user_data_manager.get_user_data(user_id)
     
     logger.info(f"收到用戶 {user_id} 的音頻訊息")
-    # ✅ 判斷是否為考試模式（新增）
+    # 判斷是否為考試模式
     if user_id in exam_sessions:
         logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
         session = exam_sessions[user_id]
@@ -1015,9 +1048,24 @@ def handle_audio_message(event):
         if current_q["type"] == "pronounce":
             # 處理語音辨識與比對
             audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
+            
+            # 確保音頻文件存在
+            if not audio_file_path or not os.path.exists(audio_file_path):
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="❌ 處理您的錄音時出現問題，請再試一次。")
+                )
+                return
+                
+            # 使用 Google 語音識別
             transcript = speech_to_text_google(audio_file_path)
-
-            os.remove(audio_file_path)
+            
+            # 清理臨時文件
+            try:
+                os.remove(audio_file_path)
+                logger.info(f"已移除臨時音頻文件 {audio_file_path}")
+            except Exception as e:
+                logger.warning(f"移除臨時文件失敗: {str(e)}")
 
             if not transcript:
                 line_bot_api.reply_message(
@@ -1028,6 +1076,9 @@ def handle_audio_message(event):
 
             correct_word = current_q["thai"]
             is_correct = score_pronunciation(transcript, correct_word)
+            
+            # 紀錄學習數據
+            save_progress(user_id, current_q.get("word", "unknown"), 100 if is_correct else 60)
 
             if is_correct:
                 session["correct"] += 1
@@ -1039,6 +1090,10 @@ def handle_audio_message(event):
             if session["current"] >= len(session["questions"]):
                 total = len(session["questions"])
                 score = session["correct"]
+                
+                # 儲存考試結果
+                save_exam_result(user_id, score, total, exam_type="發音考試")
+                
                 del exam_sessions[user_id]
                 line_bot_api.reply_message(
                     event.reply_token,
@@ -1050,6 +1105,7 @@ def handle_audio_message(event):
                     [TextSendMessage(text=result_text), send_exam_question(user_id)]
                 )
             return
+    
     # 檢查用戶是否在發音練習中
     if user_data.get('current_activity') == 'echo_practice':
         try:
@@ -1258,13 +1314,16 @@ def send_exam_question(user_id):
         quick_reply_items = [
             QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"]))
             for opt in options
-        ]
+    ]
 
-        return [
-            TextSendMessage(text=f"第 {q_num} 題：請聽音檔後從以下圖片選出正確答案"),
-            TextSendMessage(text=audio_url),
-            TextSendMessage(text="請選擇：", quick_reply=QuickReply(items=quick_reply_items))
-        ]
+    return [
+        TextSendMessage(text=f"第 {q_num} 題：請聽音檔後從以下選項選出正確答案"),
+        AudioSendMessage(
+            original_content_url=audio_url,
+            duration=3000  # 假設音訊長度為3秒
+        ),
+        TextSendMessage(text="請選擇：", quick_reply=QuickReply(items=quick_reply_items))
+    ]
 #=== 考試結果儲存 ===    
 def save_exam_result(user_id, score, total, exam_type="綜合考試"):
     ref = db.collection("users").document(user_id).collection("exams").document()
