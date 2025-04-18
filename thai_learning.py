@@ -762,23 +762,6 @@ def evaluate_pronunciation_google(public_url, reference_text):
         logger.error(f"[Google STT 評分錯誤] {str(e)}")
         return {"success": False, "error": str(e)}
     
-def transcribe_audio_google(gcs_url):
-    """呼叫 Google STT 將 GCS 音訊轉換為泰文文字"""
-    client = init_google_speech_client()
-
-    audio = speech.RecognitionAudio(uri=gcs_url)
-    config = speech.RecognitionConfig(
-        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=16000,
-        language_code="th-TH"
-    )
-
-    response = client.recognize(config=config, audio=audio)
-
-    if not response.results:
-        raise ValueError("無法辨識語音")
-
-    return response.results[0].alternatives[0].transcript
     
 
 def transcribe_audio_google(gcs_url):
@@ -1021,13 +1004,13 @@ def get_audio_content_with_gcs(message_id, user_id):
 
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
-    """處理音頻消息，主要用於發音評估"""
+    """處理音頻消息，主要用於發音評估或考試模式"""
     user_id = event.source.user_id
     user_data = user_data_manager.get_user_data(user_id)
 
     logger.info(f"收到用戶 {user_id} 的音頻訊息")
 
-    # 判斷是否為考試模式
+    # ✅ 考試模式
     if user_id in exam_sessions:
         logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
         session = exam_sessions[user_id]
@@ -1076,30 +1059,37 @@ def handle_audio_message(event):
                 line_bot_api.reply_message(event.reply_token, reply)
             return
 
-    # 若非考試流程，走回音練習
-    if user_data.get('current_activity') == 'echo_practice':
+    # ✅ 發音練習模式
+    if user_data.get("current_activity") == "echo_practice":
         try:
             audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
 
-            if not audio_file_path or not os.path.exists(audio_file_path):
-                logger.error(f"音頻檔案路徑無效: {audio_file_path}")
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="❌ 找不到音訊檔案，請再試一次")
-                )
-                return
-
-            result = evaluate_pronunciation_google(gcs_url, user_data.get('current_vocab_thai', ''))
-            logger.info(f"評估結果: {result}")
+            result = evaluate_pronunciation_google(gcs_url, user_data.get("current_vocab_thai", ""))
 
             if result["success"]:
                 score = result["overall_score"]
                 save_progress(user_id, user_data["current_vocab"], score)
-                feedback = f"✅ 評分完成：{score} 分\n你說的是：「{result['recognized_text']}」"
-            else:
-                feedback = f"❌ 評分失敗：{result['error']}"
 
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=feedback))
+                word = user_data["current_vocab"]
+                thai_word = user_data.get("current_vocab_thai", "")
+
+                main_feedback = f"發音評分：{score}/100\n做得好！您的 '{word}'（{thai_word}）發音清晰，繼續保持。"
+                details = f"發音評估詳情：\n" \
+                          f"整體評分：{score}/100\n" \
+                          f"準確度：{result['accuracy_score']}/100\n" \
+                          f"發音清晰度：{result['pronunciation_score']}/100\n" \
+                          f"完整度：{result['completeness_score']}/100\n" \
+                          f"流暢度：{result['fluency_score']}/100"
+
+                line_bot_api.reply_message(event.reply_token, [
+                    TextSendMessage(text=main_feedback),
+                    TextSendMessage(text=details)
+                ])
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=f"❌ 評分失敗：{result['error']}")
+                )
 
         except Exception as e:
             logger.error(f"處理音頻時發生錯誤: {str(e)}", exc_info=True)
@@ -1107,12 +1097,17 @@ def handle_audio_message(event):
                 event.reply_token,
                 TextSendMessage(text="❌ 發生錯誤，請稍後再試")
             )
-
+        finally:
+            if audio_file_path and os.path.exists(audio_file_path):
+                os.remove(audio_file_path)
+                logger.info(f"✅ 已移除臨時音訊：{audio_file_path}")
     else:
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="請先選擇「練習發音」開始發音練習")
         )
+
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     """處理文字訊息"""
