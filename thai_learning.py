@@ -761,6 +761,25 @@ def evaluate_pronunciation_google(public_url, reference_text):
     except Exception as e:
         logger.error(f"[Google STT 評分錯誤] {str(e)}")
         return {"success": False, "error": str(e)}
+    
+def transcribe_audio_google(gcs_url):
+    """呼叫 Google STT 將 GCS 音訊轉換為泰文文字"""
+    client = init_google_speech_client()
+
+    audio = speech.RecognitionAudio(uri=gcs_url)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code="th-TH"
+    )
+
+    response = client.recognize(config=config, audio=audio)
+
+    if not response.results:
+        raise ValueError("無法辨識語音")
+
+    return response.results[0].alternatives[0].transcript
+    
 
 def transcribe_audio_google(gcs_url):
     """呼叫 Google Speech-to-Text API 轉文字"""
@@ -1109,9 +1128,10 @@ def handle_text_message(event):
         if result:
             if isinstance(result, list):
                 line_bot_api.reply_message(event.reply_token, result)
-            else:
-                line_bot_api.reply_message(event.reply_token, result)
-            return
+        else:
+            line_bot_api.reply_message(event.reply_token, [result])
+        return
+
     
     # 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
@@ -2220,14 +2240,15 @@ def create_flex_memory_game(cards, game_state, user_id):
         return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
 
     # ✅ 考試指令過濾（只有在符合格式才執行）
-        if text.startswith("開始") and "考" in text:
-            result = handle_exam_message(event)
-            if result:
-                if isinstance(result, list):
-                    line_bot_api.reply_message(event.reply_token, result)
-                else:
-                    line_bot_api.reply_message(event.reply_token, [result])  # ✅ 包成 list
-                return
+    if text.startswith("開始") and "考" in text:
+        result = handle_exam_message(event)
+        if result:
+            if isinstance(result, list):
+                line_bot_api.reply_message(event.reply_token, result)
+        else:
+            line_bot_api.reply_message(event.reply_token, [result])
+        return
+
 
 
 
