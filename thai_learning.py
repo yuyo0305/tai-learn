@@ -1117,6 +1117,7 @@ def handle_text_message(event):
     
     logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
     
+
     # ✅ 考試指令過濾（只有在符合格式才執行）
     if text.startswith("開始") and "考" in text:
         result = handle_exam_message(event)
@@ -2215,6 +2216,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                     "layout": "horizontal",
                     "contents": card_contents
                 }
+                
             }
             bubbles.append(row_bubble)
 
