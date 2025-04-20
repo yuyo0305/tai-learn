@@ -2056,7 +2056,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                     {
                         "type": "box",
                         "layout": "horizontal",
-                        "justifyContent": "center"
+                        "justifyContent":"center",
                         "contents": [
                             {"type": "text", "text": "⏱️ 剩餘時間:", "size": "sm", "color": "#555555", "flex": 2},
                             {"type": "text", "text": f"{remaining_time} 秒", "size": "sm", "color": "#111111", "flex": 1}
