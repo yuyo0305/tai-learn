@@ -1053,7 +1053,7 @@ def handle_audio_message(event):
                     try:
                         similarity_score = compute_similarity(audio_file_path, ref_audio_path)
                         logger.info(f"SpeechBrain 相似度分數：{similarity_score:.2f}")
-                        is_correct = similarity_score >= 0.7
+                        is_correct = similarity_score >= 0.6
                         method = "SpeechBrain"
                     except Exception as e2:
                         logger.warning(f"❌ 語音比對也失敗，啟用模擬 fallback：{str(e2)}")
