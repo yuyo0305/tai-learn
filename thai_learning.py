@@ -2023,43 +2023,28 @@ def handle_memory_game(user_id, message):
 
 def create_flex_memory_game(cards, game_state, user_id):
     """創建 Flex Message 的記憶翻牌遊戲界面"""
-    # 初始化 bubbles 為空列表
-    bubbles = []
+    from linebot.models import FlexSendMessage, TextSendMessage
 
+    bubbles = []
     try:
-        # 遊戲狀態數據
         attempts = game_state.get('attempts', 0)
         remaining_time = int(game_state.get('remaining_time', 0))
         category_name = game_state.get('category_name', '未知')
         is_completed = game_state.get('is_completed', False)
         is_timeout = game_state.get('is_timeout', False)
-        
-        # 獲取已匹配和已翻開的卡片
-        matched_ids = []
-        for pair in game_state.get('matched_pairs', []):
-            matched_ids.extend(pair)
+
+        matched_ids = [c for pair in game_state.get('matched_pairs', []) for c in pair]
         flipped_ids = game_state.get('flipped_cards', [])
 
-        # 1. 遊戲信息氣泡
+        # 遊戲資訊卡片
         info_bubble = {
             "type": "bubble",
             "header": {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
-                    {
-                        "type": "text",
-                        "text": "泰語記憶翻牌遊戲",
-                        "weight": "bold",
-                        "size": "xl",
-                        "color": "#ffffff"
-                    },
-                    {
-                        "type": "text",
-                        "text": category_name,
-                        "size": "md",
-                        "color": "#ffffff"
-                    }
+                    {"type": "text", "text": "泰語記憶翻牌遊戲", "weight": "bold", "size": "xl", "color": "#ffffff"},
+                    {"type": "text", "text": category_name, "size": "md", "color": "#ffffff"}
                 ],
                 "backgroundColor": "#4A86E8",
                 "paddingBottom": "10px"
@@ -2072,20 +2057,8 @@ def create_flex_memory_game(cards, game_state, user_id):
                         "type": "box",
                         "layout": "horizontal",
                         "contents": [
-                            {
-                                "type": "text",
-                                "text": "⏱️ 剩餘時間:",
-                                "size": "sm",
-                                "color": "#555555",
-                                "flex": 2
-                            },
-                            {
-                                "type": "text",
-                                "text": f"{remaining_time} 秒",
-                                "size": "sm",
-                                "color": "#111111",
-                                "flex": 1
-                            }
+                            {"type": "text", "text": "⏱️ 剩餘時間:", "size": "sm", "color": "#555555", "flex": 2},
+                            {"type": "text", "text": f"{remaining_time} 秒", "size": "sm", "color": "#111111", "flex": 1}
                         ]
                     }
                 ]
@@ -2093,42 +2066,8 @@ def create_flex_memory_game(cards, game_state, user_id):
         }
         bubbles.append(info_bubble)
 
-        # 2. 遊戲結束氣泡 (如果適用)
-        if is_completed or is_timeout:
-            game = next((g for g in [user_data_manager.get_user_data('temp')['game_state'].get('memory_game')] if g), None)
-            end_message = game.get_end_result() if game else "遊戲結束！"
-            
-            end_bubble = {
-                "type": "bubble",
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "遊戲結束",
-                            "weight": "bold",
-                            "size": "xl",
-                            "align": "center"
-                        },
-                        {
-                            "type": "text",
-                            "text": end_message,
-                            "wrap": True,
-                            "margin": "md"
-                        }
-                    ]
-                }
-            }
-            bubbles.append(end_bubble)
-
-        # 3. 卡片氣泡 - 這裡需要修改
-        card_rows = [[], []]
-        for i, card in enumerate(cards):
-            row_index = i // 5
-            if row_index < 2:
-                card_rows[row_index].append(card)
-
+        # 卡片行排列，每列最多 4 張卡
+        card_rows = [cards[i:i+4] for i in range(0, len(cards), 4)]
         for row_cards in card_rows:
             card_contents = []
             for card in row_cards:
@@ -2136,11 +2075,8 @@ def create_flex_memory_game(cards, game_state, user_id):
                 is_matched = card_id in matched_ids
                 is_flipped = card_id in flipped_ids
 
-                # 這裡需要修改 - 根據卡片類型顯示不同內容
                 if is_matched or is_flipped:
-                    # 已翻開的卡片
                     if card['type'] == 'image':
-                        # 圖片卡 - 顯示實際圖片
                         card_box = {
                             "type": "box",
                             "layout": "vertical",
@@ -2151,25 +2087,11 @@ def create_flex_memory_game(cards, game_state, user_id):
                             "borderWidth": "1px",
                             "borderColor": "#AAAAAA",
                             "contents": [
-                                {
-                                    "type": "image",
-                                    "url": card['content'],  # 直接使用卡片中的圖片URL
-                                    "size": "full",
-                                    "aspectMode": "cover",
-                                    "aspectRatio": "1:1"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": card['word'],
-                                    "size": "xxs",
-                                    "align": "center",
-                                    "wrap": True,
-                                    "maxLines": 2
-                                }
+                                {"type": "image", "url": card['content'], "size": "full", "aspectMode": "cover", "aspectRatio": "1:1"},
+                                {"type": "text", "text": card['word'], "size": "xxs", "align": "center", "wrap": True, "maxLines": 2}
                             ]
                         }
                     else:
-                        # 音頻卡 - 添加按鈕
                         card_box = {
                             "type": "box",
                             "layout": "vertical",
@@ -2180,91 +2102,41 @@ def create_flex_memory_game(cards, game_state, user_id):
                             "borderWidth": "1px",
                             "borderColor": "#AAAAAA",
                             "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "🎵",
-                                    "size": "lg",
-                                    "align": "center",
-                                    "color": "#FF6B6E"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": card['thai'],
-                                    "size": "xxs",
-                                    "align": "center",
-                                    "wrap": True,
-                                    "maxLines": 2
-                                }
+                                {"type": "text", "text": "🎵", "size": "lg", "align": "center", "color": "#FF6B6E"},
+                                {"type": "text", "text": card['thai'], "size": "xxs", "align": "center", "wrap": True, "maxLines": 2}
                             ],
-                            "action": {
-                                "type": "message",
-                                "text": f"播放音頻:{card['word']}"
-                            }
+                            "action": {"type": "message", "text": f"播放音頻:{card['word']}"}
                         }
-                        
-                        # 移除自動播放音頻的代碼，防止重複播放
-                        # 音頻播放已在 handle_memory_game 中處理
                 else:
-                    # 未翻開的卡片 - 保持原樣
+                    back_icon = "🖼️" if card['type'] == "image" else "🎧"
+                    back_color = "#4A86E8" if card['type'] == "image" else "#FFA94D"
                     card_box = {
                         "type": "box",
                         "layout": "vertical",
                         "width": "60px",
                         "height": "80px",
-                        "backgroundColor": "#4A86E8",
+                        "backgroundColor": back_color,
                         "cornerRadius": "4px",
                         "borderWidth": "1px",
                         "borderColor": "#0B5ED7",
                         "contents": [
-                            {
-                                "type": "text",
-                                "text": "🎴",
-                                "color": "#FFFFFF",
-                                "align": "center",
-                                "gravity": "center",
-                                "size": "xl"
-                            },
-                            {
-                                "type": "text",
-                                "text": f"{card_id}",
-                                "color": "#FFFFFF",
-                                "align": "center",
-                                "size": "sm"
-                            }
+                            {"type": "text", "text": back_icon, "color": "#FFFFFF", "align": "center", "gravity": "center", "size": "xl"},
+                            {"type": "text", "text": f"{card_id}", "color": "#FFFFFF", "align": "center", "size": "sm"}
                         ],
-                        "action": {
-                            "type": "message",
-                            "text": f"翻牌:{card_id}"
-                        }
+                        "action": {"type": "message", "text": f"翻牌:{card_id}"}
                     }
 
                 card_contents.append(card_box)
 
-            row_bubble = {
-                "type": "bubble",
-                "body": {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": card_contents
-                }
-
-            }
+            row_bubble = {"type": "bubble", "body": {"type": "box", "layout": "horizontal", "contents": card_contents}}
             bubbles.append(row_bubble)
 
-        # 限制 bubbles 數量
-        bubbles = bubbles[:10]
-        
-        logger.info(f"創建 Flex Message，Bubble 數量: {len(bubbles)}")
-        
-        flex_message = {
-            "type": "carousel",
-            "contents": bubbles
-        }
-        
+        flex_message = {"type": "carousel", "contents": bubbles}
         return FlexSendMessage(alt_text="泰語記憶翻牌遊戲", contents=flex_message)
 
     except Exception as e:
-        logger.error(f"創建 Flex Message 時發生錯誤: {str(e)}")
+        import logging
+        logging.getLogger().error(f"創建 Flex Message 時發生錯誤: {str(e)}")
         return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
 
     # ✅ 考試指令過濾（只有在符合格式才執行）
