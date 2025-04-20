@@ -1038,33 +1038,50 @@ def handle_audio_message(event):
                     event.reply_token, TextSendMessage(text="❌ 找不到音訊檔案，請再試一次")
                 )
                 return
+    elif user_data.get("current_activity") == "echo_practice":
+        current_vocab_key = user_data.get("current_vocab")
+        if not current_vocab_key or current_vocab_key not in thai_data['basic_words']:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚠️ 無法取得目前的練習詞彙，請先從主選單進入發音練習")
+            )
+            return
 
+        current_vocab = thai_data['basic_words'][current_vocab_key]
+        audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
+
+        if not audio_file_path or not os.path.exists(audio_file_path):
+            line_bot_api.reply_message(
+                event.reply_token, TextSendMessage(text="❌ 找不到音訊檔案，請再試一次")
+            )
+            return
+
+        
+        try:
             try:
+                recognized_text = transcribe_audio_google(gcs_url)
+                logger.info(f"識別文字: {recognized_text}")
+                correct_word = current_q["thai"]
+                similarity = SequenceMatcher(None, recognized_text.strip(), correct_word.strip()).ratio()
+                is_correct = (correct_word in recognized_text) or (similarity >= 0.5)
+                method = "Google STT（關鍵詞+相似度）"
+            except Exception as e:
+                logger.warning(f"❌ Google STT 辨識失敗，嘗試 SpeechBrain fallback：{str(e)}")
+                ref_audio_path = os.path.join("static", "audio_ref", current_q["word"] + ".wav")
                 try:
-                    recognized_text = transcribe_audio_google(gcs_url)
-                    logger.info(f"識別文字: {recognized_text}")
+                    similarity_score = compute_similarity(audio_file_path, ref_audio_path)
+                    logger.info(f"SpeechBrain 相似度分數：{similarity_score:.2f}")
+                    is_correct = similarity_score >= 0.5
+                    method = "SpeechBrain"
+                except Exception as e2:
+                    logger.warning(f"❌ 語音比對也失敗，啟用模擬 fallback：{str(e2)}")
+                    is_correct = True
+                    method = "智慧預估"
+        finally:
+            if os.path.exists(audio_file_path):
+                os.remove(audio_file_path)
+                logger.info(f"✅ 已移除臨時音訊：{audio_file_path}")
 
-                    correct_word = current_q["thai"]
-                    from difflib import SequenceMatcher
-                    similarity = SequenceMatcher(None, recognized_text.strip(), correct_word.strip()).ratio()
-                    is_correct = (correct_word in recognized_text) or (similarity >= 0.5)
-                    method = "Google STT（關鍵詞+相似度）"
-                except Exception as e:
-                    logger.warning(f"❌ Google STT 辨識失敗，嘗試 SpeechBrain fallback：{str(e)}")
-                    ref_audio_path = os.path.join("static", "audio_ref", current_q["word"] + ".wav")
-                    try:
-                        similarity_score = compute_similarity(audio_file_path, ref_audio_path)
-                        logger.info(f"SpeechBrain 相似度分數：{similarity_score:.2f}")
-                        is_correct = similarity_score >= 0.5
-                        method = "SpeechBrain"
-                    except Exception as e2:
-                        logger.warning(f"❌ 語音比對也失敗，啟用模擬 fallback：{str(e2)}")
-                        is_correct = True
-                        method = "智慧預估"
-            finally:
-                if os.path.exists(audio_file_path):
-                    os.remove(audio_file_path)
-                    logger.info(f"✅ 已移除臨時音訊：{audio_file_path}")
 
             if is_correct:
                 session["correct"] += 1
@@ -1254,6 +1271,20 @@ def handle_text_message(event):
         )
 
 def handle_exam_message(event):
+
+    if message_text == "跳過":
+        if user_id in exam_sessions:
+            session = exam_sessions[user_id]
+            session["current"] += 1
+            if session["current"] >= len(session["questions"]):
+                total = len(session["questions"])
+                score = session["correct"]
+                save_exam_result(user_id, score, total, exam_type="綜合考試")
+                del exam_sessions[user_id]
+                return TextSendMessage(text=f"🏁 考試結束！共答對 {score}/{total} 題。")
+            next_q = send_exam_question(user_id)
+            return [TextSendMessage(text="⏭️ 已跳過本題，請看下一題👇"), next_q]
+
     user_id = event.source.user_id
     message_text = event.message.text.strip()
 
@@ -1339,10 +1370,7 @@ def send_exam_question(user_id):
         audio_url = question["audio_url"]
         options = question["choices"]
 
-        quick_reply_items = [
-            QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"]))
-            for opt in options
-        ]
+        quick_reply_items = [QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"])) for opt in options] + [QuickReplyButton(action=MessageAction(label="跳過", text="跳過"))]
 
         return [
             TextSendMessage(text=f"第 {q_num} 題：請聽音檔後從以下選項選出正確答案"),
