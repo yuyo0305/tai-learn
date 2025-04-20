@@ -1106,6 +1106,19 @@ def handle_audio_message(event):
                 reply = [feedback, next_q] if isinstance(next_q, (list, tuple)) else [feedback, next_q]
                 line_bot_api.reply_message(event.reply_token, reply)
             return
+
+from linebot.models import FollowEvent
+
+@handler.add(FollowEvent)
+def handle_follow(event):
+    user_id = event.source.user_id
+    logger.info(f"新用戶加入 LINE Bot：{user_id}")
+    welcome_message = TextSendMessage(
+        text="👋 歡迎加入泰語學習聊天機器人！\n請輸入「開始學習」來開啟主選單。"
+    )
+    line_bot_api.reply_message(event.reply_token, welcome_message)
+
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     """處理文字訊息"""
@@ -1510,7 +1523,7 @@ def start_echo_practice(user_id):
     # 添加發音指導
     message_list.append(
         TextSendMessage(
-            text=f"請聽標準發音，然後跟著練習：\n\n泰語：{word_data['thai']}\n發音：{word_data['pronunciation']}\n\n請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
+            text=f"🧠【回音法 Echo Method】\n\n1. Listen：聽一句泰文單字\n2. Echo：靜下來 3 秒，在腦中重播剛聽到的聲音與語調\n3. Mimic：大聲模仿你腦中的回音\n\n📣 練習詞彙：{word_data['thai']}\n發音：{word_data['pronunciation']}\n\n請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
         )
     )
     
