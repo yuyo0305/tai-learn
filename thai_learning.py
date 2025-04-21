@@ -1313,7 +1313,7 @@ def handle_exam_message(event):
         
     # 正在考試狀態中（處理作答）
     if user_id in exam_sessions:
-    session = exam_sessions[user_id]
+       session = exam_sessions[user_id]
     question = session["questions"][session["current"]]
     
     # 判斷答題類型
