@@ -1154,20 +1154,6 @@ def handle_text_message(event):
     user_data = user_data_manager.get_user_data(user_id)
     text = event.message.text
     
-    
-    if text == "跳過" and user_id in exam_sessions:
-        session = exam_sessions[user_id]
-        session["current"] += 1
-        if session["current"] >= len(session["questions"]):
-            final_score = session["correct"]
-            total = len(session["questions"])
-            del exam_sessions[user_id]
-            summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
-            line_bot_api.reply_message(event.reply_token, summary)
-        else:
-            next_q = send_exam_question(user_id)
-            line_bot_api.reply_message(event.reply_token, next_q if isinstance(next_q, list) else [next_q])
-        return
     logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
     
 
@@ -2247,52 +2233,11 @@ def create_flex_memory_game(cards, game_state, user_id):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
-    
-
-def handle_exam_message(event):
-    """處理考試指令並啟動考試流程"""
-    user_id = event.source.user_id
-    message_text = event.message.text.strip()
-
-    # 解析題目類型
-    topic = message_text.replace("開始", "").replace("考試", "").strip()
-    if topic not in exam_data:
-        return TextSendMessage(text="⚠️ 找不到相關考試類型，請確認輸入是否正確")
-
-    # 抽出題目：5 題唸出圖片 + 5 題音檔選擇題
-    
-    category_map = {
-        "日常用語": "daily_phrases",
-        "數字": "numbers",
-        "動物": "animals",
-        "食物": "food",
-        "交通工具": "transportation",
-        "綜合": None
-    }
-    category_key = category_map.get(topic)
-    questions = generate_exam(thai_data, category_key)
-    
-    random.shuffle(questions)
-    selected_questions = []
-
-    pronounce_qs = [q for q in questions if q["type"] == "pronounce"][:5]
-    audio_qs = [q for q in questions if q["type"] == "audio"][:5]
-    selected_questions.extend(pronounce_qs + audio_qs)
-
-    # 建立使用者的考試 session
-    exam_sessions[user_id] = {
-        "questions": selected_questions,
-        "current": 0,
-        "correct": 0
-    }
-
-    return send_exam_question(user_id)
-
-
-# 主程序入口 (放在最後)
+    # 主程序入口 (放在最後)
 if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"應用啟動在端口 {port}")
     app.run(host='0.0.0.0', port=port)
+    
     
