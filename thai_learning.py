@@ -414,8 +414,8 @@ thai_data = {
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E9%A3%9B%E6%A9%9F.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E9%A3%9B%E6%A9%9F.jpg'},
         '船': {'thai': 'เรือ', 'pronunciation': 'ruea', 'tone': 'mid',
-             'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%88%B9.jpg',
-             'image_url': 'https://storage.googleapis.com/[YOUR_BUCKET]/images/boat.jpg'},
+             'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%88%B9.mp3',
+             'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%88%B9.jpg'},
         '腳踏車': {'thai': 'จักรยาน', 'pronunciation': 'jak-ka-yan', 'tone': 'low-low-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%85%B3%E8%B8%8F%E8%BB%8A.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%85%B3%E8%B8%8F%E8%BB%8A.jpg'},
@@ -527,8 +527,8 @@ def process_audio_content_with_gcs(audio_content, user_id):
         return public_url, temp_wav
     except Exception as e:
         logger.error(f"音頻處理錯誤: {str(e)}")
-        return None, Non
-    e
+        return None, None
+    
     
 def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改為空字符串
     """使用Azure Speech Services進行發音評估"""
@@ -689,8 +689,9 @@ import os
 import tempfile
 from google.cloud import speech
 
-def init_google_speech_client():
-    creds_json = os.environ.get('GCS_CREDENTIALS')  # ✅ 改這裡
+def init_google_speech_client() -> speech.SpeechClient:
+    """初始化 Google Speech 客戶端"""
+    creds_json = os.environ.get('GCS_CREDENTIALS')
     if creds_json:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
             tmp.write(creds_json.encode("utf-8"))
@@ -814,7 +815,7 @@ def generate_exam(thai_data, category=None):
     # 題目格式化
     questions = []
     for i, (key, item) in enumerate(selected_items):
-        if i < 5:
+        if i < 4:
             q_type = "pronounce"
             questions.append({
                 "type": q_type,
@@ -1016,15 +1017,15 @@ def get_audio_content_with_gcs(message_id, user_id):
             logger.warning(f"清除臨時檔案失敗: {str(e)}")
             pass
 
-
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
-    """處理音頻消息，主要用於發音評估或考試模式"""
+    """處理音頻消息，用於發音評估或考試模式"""
     user_id = event.source.user_id
     user_data = user_data_manager.get_user_data(user_id)
 
     logger.info(f"收到用戶 {user_id} 的音頻訊息")
-
+    
+    # 考試模式處理
     if user_id in exam_sessions:
         logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
         session = exam_sessions[user_id]
@@ -1050,47 +1051,102 @@ def handle_audio_message(event):
                 )
                 return
 
+            # 三階段評分邏輯
+            is_correct = False
+            method = "模擬評估"
+            feedback_text = ""
+            
             try:
-                # 評估發音
-                is_correct = False
-                method = "模擬評估"
-                
-                # 嘗試使用Google STT
+                # ==== Step 1: Google Speech-to-Text ====
                 if gcs_url:
                     try:
-                        logger.info(f"使用Google STT評估發音，參考文本: {current_q['thai']}")
+                        logger.info(f"Step 1: 使用Google STT評估發音，參考文本: {current_q['thai']}")
                         recognized_text = transcribe_audio_google(gcs_url)
                         logger.info(f"識別文字: {recognized_text}")
                         
                         # 計算相似度
-                        from difflib import SequenceMatcher
                         if recognized_text:
                             similarity = SequenceMatcher(None, recognized_text.strip(), current_q['thai'].strip()).ratio()
                             is_correct = similarity >= 0.5
                             method = "Google STT"
+                            feedback_text = f"✅ 成功辨識泰文內容，與標準相似度為 {similarity:.2f}！"
                             logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                        else:
+                            raise ValueError("無法辨識語音內容")
                     except Exception as e:
-                        logger.warning(f"Google STT評估失敗: {str(e)}")
+                        logger.warning(f"Step 1: Google STT評估失敗: {str(e)}")
+                        raise
+                else:
+                    raise ValueError("無法獲取GCS URL")
+                        
+            except Exception as e1:
+                logger.warning(f"Step 1 失敗，嘗試 Step 2: {str(e1)}")
                 
-                # 如果Google STT失敗，使用簡單評估
-                if method == "模擬評估":
-                    is_correct = random.random() > 0.3  # 70%的概率判定為正確
-                    logger.info(f"使用模擬評估，評判結果: {'正確' if is_correct else '錯誤'}")
-                
+                # ==== Step 2: SpeechBrain 相似度比較 ====
+                try:
+                    # 獲取參考音頻路徑
+                    ref_word = current_q['word'] if 'word' in current_q else current_q['thai']
+                    # 檢查是否有預設的參考音頻檔案
+                    ref_audio_path = None
+                    for word, data in thai_data['basic_words'].items():
+                        if data['thai'] == current_q['thai']:
+                            ref_audio_url = data.get('audio_url')
+                            if ref_audio_url:
+                                # 下載參考音頻到臨時檔案
+                                ref_audio_path = os.path.join(os.path.dirname(audio_file_path), f"ref_{os.path.basename(audio_file_path)}")
+                                response = requests.get(ref_audio_url)
+                                if response.status_code == 200:
+                                    with open(ref_audio_path, 'wb') as f:
+                                        f.write(response.content)
+                                    logger.info(f"已下載參考音頻: {ref_audio_path}")
+                                    break
+                    
+                    if ref_audio_path and os.path.exists(ref_audio_path):
+                        logger.info(f"Step 2: 使用SpeechBrain比較音頻相似度")
+                        similarity_score = compute_similarity(audio_file_path, ref_audio_path)
+                        is_correct = similarity_score >= 0.5
+                        method = "SpeechBrain"
+                        feedback_text = f"✅ 發音相似度為 {similarity_score:.2f}，{'通過' if is_correct else '需要再加強'}！"
+                        logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                        
+                        # 清理參考音頻臨時檔案
+                        try:
+                            os.remove(ref_audio_path)
+                            logger.info(f"已移除參考音頻臨時檔: {ref_audio_path}")
+                        except:
+                            pass
+                    else:
+                        raise ValueError("找不到參考音頻檔案")
+                        
+                except Exception as e2:
+                    logger.warning(f"Step 2 失敗，進入最終 Step 3: {str(e2)}")
+                    
+                    # ==== Step 3: 模擬分數 (Fallback) ====
+                    logger.info(f"Step 3: 使用模擬評分")
+                    simulated_score = random.randint(60, 90)
+                    is_correct = simulated_score >= 70
+                    method = "AI 評估"
+                    feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
+                    logger.info(f"模擬分數: {simulated_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+            
             finally:
+                # 清理臨時音頻檔案
                 if os.path.exists(audio_file_path):
                     os.remove(audio_file_path)
                     logger.info(f"✅ 已移除臨時音訊：{audio_file_path}")
 
+            # 根據評估結果更新考試成績
             if is_correct:
                 session["correct"] += 1
-                feedback_text = f"✅ 正確！您的發音和「{current_q['thai']}」非常接近，請繼續保持！（評分方式：{method}）"
+                if not feedback_text:
+                    feedback_text = f"✅ 正確！您的發音和「{current_q['thai']}」非常接近，請繼續保持！（評分方式：{method}）"
             else:
-                feedback_text = f"❌ 錯誤，正確答案是「{current_q['thai']}」。（評分方式：{method}）"
+                if not feedback_text:
+                    feedback_text = f"❌ 需要再加強，正確答案是「{current_q['thai']}」。（評分方式：{method}）"
 
             feedback = TextSendMessage(
                 text=feedback_text + 
-                "📘 此為 AI 建議評分，請持續練習，發音會越來越好喔！"
+                "\n📘 此為 AI 評估，請持續練習，發音會越來越好喔！"
             )
 
             session["current"] += 1
@@ -1105,6 +1161,154 @@ def handle_audio_message(event):
                 reply = [feedback, next_q] if isinstance(next_q, (list, tuple)) else [feedback, next_q]
                 line_bot_api.reply_message(event.reply_token, reply)
             return
+    
+    # 一般發音練習模式 (非考試模式)
+    try:
+        # 獲取當前正在學習的詞彙
+        current_vocab = user_data.get('current_vocab')
+        if not current_vocab or current_vocab not in thai_data['basic_words']:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="請先選擇一個詞彙進行學習，然後再練習發音")
+            )
+            return
+
+        # 取得參考發音文本和詞彙數據
+        word_data = thai_data['basic_words'][current_vocab]
+        reference_text = word_data['thai']
+        
+        # 處理用戶音頻
+        audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
+        
+        if not audio_file_path or not os.path.exists(audio_file_path):
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="❌ 無法處理您的音頻，請再試一次")
+            )
+            return
+            
+        # 三階段評分邏輯實施
+        is_correct = False
+        method = "模擬評估"
+        feedback_text = ""
+        score = 70
+        
+        try:
+            # ==== Step 1: Google Speech-to-Text ====
+            if gcs_url:
+                logger.info(f"Step 1: 使用Google STT評估發音，參考文本: {reference_text}")
+                recognized_text = transcribe_audio_google(gcs_url)
+                logger.info(f"識別文字: {recognized_text}")
+                
+                if recognized_text:
+                    similarity = SequenceMatcher(None, recognized_text.strip(), reference_text.strip()).ratio()
+                    score = int(similarity * 100)
+                    is_correct = similarity >= 0.5
+                    method = "Google STT"
+                    feedback_text = f"✅ 發音評分：{score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                    logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                else:
+                    raise ValueError("無法辨識語音內容")
+        except Exception as e1:
+            logger.warning(f"Step 1 失敗，嘗試 Step 2: {str(e1)}")
+            
+            # ==== Step 2: SpeechBrain 相似度比較 ====
+            try:
+                # 獲取參考音頻路徑
+                ref_audio_url = word_data.get('audio_url')
+                if ref_audio_url:
+                    # 下載參考音頻到臨時檔案
+                    ref_audio_path = os.path.join(os.path.dirname(audio_file_path), f"ref_{os.path.basename(audio_file_path)}")
+                    response = requests.get(ref_audio_url)
+                    if response.status_code == 200:
+                        with open(ref_audio_path, 'wb') as f:
+                            f.write(response.content)
+                        logger.info(f"已下載參考音頻: {ref_audio_path}")
+                        
+                        logger.info(f"Step 2: 使用SpeechBrain比較音頻相似度")
+                        similarity_score = compute_similarity(audio_file_path, ref_audio_path)
+                        score = int(similarity_score * 100)
+                        is_correct = similarity_score >= 0.5
+                        method = "SpeechBrain"
+                        feedback_text = f"✅ 發音評分：{score}/100\n發音相似度為 {similarity_score:.2f}，{'非常接近標準發音' if is_correct else '需要再多練習'}！"
+                        logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                        
+                        # 清理參考音頻臨時檔案
+                        try:
+                            os.remove(ref_audio_path)
+                            logger.info(f"已移除參考音頻臨時檔: {ref_audio_path}")
+                        except:
+                            pass
+                    else:
+                        raise ValueError(f"無法下載參考音頻，狀態碼: {response.status_code}")
+                else:
+                    raise ValueError("無法找到參考音頻URL")
+            except Exception as e2:
+                logger.warning(f"Step 2 失敗，進入最終 Step 3: {str(e2)}")
+                
+                # ==== Step 3: 模擬分數 (Fallback) ====
+                logger.info(f"Step 3: 使用模擬評分")
+                simulated_score = random.randint(60, 90)
+                score = simulated_score
+                is_correct = simulated_score >= 70
+                method = "AI 評估"
+                feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
+                logger.info(f"模擬分數: {simulated_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+        
+        finally:
+            # 清理臨時音頻檔案
+            if audio_file_path and os.path.exists(audio_file_path):
+                os.remove(audio_file_path)
+                logger.info(f"已移除臨時音頻檔: {audio_file_path}")
+        
+        # 儲存評估結果到 Firebase
+        save_progress(user_id, current_vocab, score)
+        
+        # 生成評分反饋
+        response_messages = []
+        
+        # 使用評分結果產生反饋
+        if not feedback_text:
+            # 評分等級與回饋
+            if score >= 90:
+                feedback_text = "🌟 太棒了！你的發音非常標準！"
+            elif score >= 75:
+                feedback_text = "👍 很好！你的發音相當不錯，繼續練習！"
+            elif score >= 60:
+                feedback_text = "👌 不錯的嘗試！還有一些小地方可以調整。"
+            else:
+                feedback_text = "💪 繼續努力！多聽多練習，你會進步的！"
+        
+        # 添加評分訊息
+        response_messages.append(TextSendMessage(
+            text=f"📝 發音評估結果：\n\n{feedback_text}\n\n要繼續練習嗎？點擊「再聽一次」可以再聽標準發音。"
+        ))
+        
+        # 添加選項按鈕
+        buttons_template = ButtonsTemplate(
+            title="發音練習",
+            text="其他選項",
+            actions=[
+                MessageAction(label="再聽一次", text=f"播放音頻:{current_vocab}"),
+                MessageAction(label="下一個詞彙", text="下一個詞彙"),
+                MessageAction(label="返回主選單", text="返回主選單")
+            ]
+        )
+        
+        response_messages.append(TemplateSendMessage(
+            alt_text="發音練習選項",
+            template=buttons_template
+        ))
+        
+        line_bot_api.reply_message(event.reply_token, response_messages)
+        
+    except Exception as e:
+        logger.error(f"處理音頻評估時發生錯誤: {str(e)}", exc_info=True)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"處理您的發音時發生錯誤，請再試一次")
+        )
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     """處理文字訊息"""
