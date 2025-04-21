@@ -1208,7 +1208,7 @@ def handle_audio_message(event):
                     
                     # ==== Step 3: 模擬分數 (Fallback) ====
                     logger.info(f"Step 3: 使用模擬評分")
-                    simulated_score = random.randint(60, 90)
+                    simulated_score = random.randint(50, 78)
                     is_correct = simulated_score >= 70
                     method = "AI 評估"
                     feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
