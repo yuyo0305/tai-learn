@@ -2241,3 +2241,32 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=port)
     
     
+
+
+def handle_exam_message(event):
+    """處理考試指令並啟動考試流程"""
+    user_id = event.source.user_id
+    message_text = event.message.text.strip()
+
+    # 解析題目類型
+    topic = message_text.replace("開始", "").replace("考試", "").strip()
+    if topic not in exam_data:
+        return TextSendMessage(text="⚠️ 找不到相關考試類型，請確認輸入是否正確")
+
+    # 抽出題目：5 題唸出圖片 + 5 題音檔選擇題
+    questions = exam_data[topic]
+    random.shuffle(questions)
+    selected_questions = []
+
+    pronounce_qs = [q for q in questions if q["type"] == "pronounce"][:5]
+    audio_qs = [q for q in questions if q["type"] == "audio"][:5]
+    selected_questions.extend(pronounce_qs + audio_qs)
+
+    # 建立使用者的考試 session
+    exam_sessions[user_id] = {
+        "questions": selected_questions,
+        "current": 0,
+        "correct": 0
+    }
+
+    return send_exam_question(user_id)
