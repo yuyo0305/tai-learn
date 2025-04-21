@@ -1052,7 +1052,7 @@ def handle_audio_message(event):
 
             try:
                 # 評估發音的代碼保持不變...
-                
+                pass  # 確保try區塊至少有一條執行語句
                 # 可以在這裡添加更多評分邏輯...
                 
             finally:
