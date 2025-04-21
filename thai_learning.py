@@ -1107,10 +1107,18 @@ def handle_audio_message(event):
                             
                             # 計算相似度
                             similarity = SequenceMatcher(None, recognized_text.strip(), current_q['thai'].strip()).ratio()
-                            is_correct = similarity >= 0.5
+                            enhanced_score = min(int(similarity * 225), 100) 
+                            is_correct = similarity >= 0.3
                             method = "Google STT"
-                            feedback_text = f"✅ 成功辨識泰文內容，與標準相似度為 {similarity:.2f}！"
-                            logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                            if similarity >= 0.6:
+                                feedback_text = f"✅ 專業級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                            elif similarity >= 0.4:
+                                feedback_text = f"✅ 進階級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                            else:
+                                feedback_text = f"✅ 基礎級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                            score = enhanced_score
+                            logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")    
+                
                         else:
                             raise ValueError("無法辨識語音內容")
                     except Exception as e:
@@ -1283,10 +1291,16 @@ def handle_audio_message(event):
                     logger.info(f"識別文字: {recognized_text}")
                     
                     similarity = SequenceMatcher(None, recognized_text.strip(), reference_text.strip()).ratio()
-                    score = int(similarity * 100)
-                    is_correct = similarity >= 0.5
+                    enhanced_score = min(int(similarity * 150), 100)  # 放大分數，最高100分
+                    is_correct = similarity >= 0.3
                     method = "Google STT"
-                    feedback_text = f"✅ 發音評分：{score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                    if similarity >= 0.6:
+                        feedback_text = f"✅ 專業級發音！分數：{enhanced_score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                    elif similarity >= 0.4:
+                         feedback_text = f"✅ 進階級發音！分數：{enhanced_score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                    else:
+                         feedback_text = f"✅ 基礎級發音！分數：{enhanced_score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                    score = enhanced_score
                     logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")
                 else:
                     raise ValueError("無法辨識語音內容")
