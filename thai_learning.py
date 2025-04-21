@@ -1298,6 +1298,7 @@ def handle_exam_message(event):
             next_q = send_exam_question(user_id)
             return [TextSendMessage(text="⏭️ 已跳過本題，請看下一題👇"), next_q]
 
+def handle_exam_message(event):
     user_id = event.source.user_id
     message_text = event.message.text.strip()
 
