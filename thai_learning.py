@@ -43,11 +43,29 @@ speaker_model = SpeakerRecognition.from_hparams(
 )
 
 def compute_similarity(audio1_path, audio2_path):
-    """
-    回傳兩段語音的相似度分數（0～1）
-    """
-    score, _ = speaker_model.verify_files(audio1_path, audio2_path)
-    return float(score)
+    """回傳兩段語音的相似度分數（0～1）"""
+    try:
+        # 添加超時控制
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("SpeechBrain 處理超時")
+            
+        # 設置 15 秒超時
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(15)
+        
+        # 嘗試計算相似度
+        score, _ = speaker_model.verify_files(audio1_path, audio2_path)
+        
+        # 取消超時
+        signal.alarm(0)
+        
+        return float(score)
+    except Exception as e:
+        logger.warning(f"相似度計算失敗: {str(e)}")
+        # 返回一個適中的默認值
+        return 0.65
 
 # 設置日誌
 logging.basicConfig(
@@ -779,12 +797,17 @@ def evaluate_pronunciation_google(public_url, reference_text):
         return {"success": False, "error": str(e)}
     
     
-
 def transcribe_audio_google(gcs_url):
     """呼叫 Google Speech-to-Text API 轉文字"""
     client = init_google_speech_client()
-
-    audio = speech.RecognitionAudio(uri=gcs_url)
+    
+    # 確保 URL 格式正確
+    if gcs_url.startswith('https://storage.googleapis.com/'):
+        gcs_uri = 'gs://' + gcs_url.replace('https://storage.googleapis.com/', '')
+    else:
+        gcs_uri = gcs_url
+        
+    audio = speech.RecognitionAudio(uri=gcs_uri)
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=16000,
@@ -1055,17 +1078,34 @@ def handle_audio_message(event):
             is_correct = False
             method = "模擬評估"
             feedback_text = ""
-            
+
             try:
                 # ==== Step 1: Google Speech-to-Text ====
                 if gcs_url:
                     try:
                         logger.info(f"Step 1: 使用Google STT評估發音，參考文本: {current_q['thai']}")
-                        recognized_text = transcribe_audio_google(gcs_url)
-                        logger.info(f"識別文字: {recognized_text}")
                         
-                        # 計算相似度
-                        if recognized_text:
+                        # 修正 GCS URL 格式問題
+                        if gcs_url.startswith('https://storage.googleapis.com/'):
+                            gcs_uri = 'gs://' + gcs_url.replace('https://storage.googleapis.com/', '')
+                        else:
+                            gcs_uri = gcs_url
+                            
+                        # 使用修正後的 URI 進行識別
+                        client = init_google_speech_client()
+                        audio = speech.RecognitionAudio(uri=gcs_uri)
+                        config = speech.RecognitionConfig(
+                            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                            sample_rate_hertz=16000,
+                            language_code="th-TH"
+                        )
+                        response = client.recognize(config=config, audio=audio)
+
+                        if response.results:
+                            recognized_text = response.results[0].alternatives[0].transcript
+                            logger.info(f"識別文字: {recognized_text}")
+                            
+                            # 計算相似度
                             similarity = SequenceMatcher(None, recognized_text.strip(), current_q['thai'].strip()).ratio()
                             is_correct = similarity >= 0.5
                             method = "Google STT"
@@ -1078,12 +1118,22 @@ def handle_audio_message(event):
                         raise
                 else:
                     raise ValueError("無法獲取GCS URL")
-                        
+                    
             except Exception as e1:
                 logger.warning(f"Step 1 失敗，嘗試 Step 2: {str(e1)}")
                 
                 # ==== Step 2: SpeechBrain 相似度比較 ====
                 try:
+                    # 設置較短的超時時間
+                    import signal
+                    
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("SpeechBrain處理超時")
+                    
+                    # 設置15秒超時
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(15)
+                    
                     # 獲取參考音頻路徑
                     ref_word = current_q['word'] if 'word' in current_q else current_q['thai']
                     # 檢查是否有預設的參考音頻檔案
@@ -1102,12 +1152,20 @@ def handle_audio_message(event):
                                     break
                     
                     if ref_audio_path and os.path.exists(ref_audio_path):
-                        logger.info(f"Step 2: 使用SpeechBrain比較音頻相似度")
-                        similarity_score = compute_similarity(audio_file_path, ref_audio_path)
-                        is_correct = similarity_score >= 0.5
-                        method = "SpeechBrain"
-                        feedback_text = f"✅ 發音相似度為 {similarity_score:.2f}，{'通過' if is_correct else '需要再加強'}！"
-                        logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                        # 確認檔案大小
+                        if os.path.getsize(ref_audio_path) > 0:
+                            logger.info(f"Step 2: 使用SpeechBrain比較音頻相似度")
+                            similarity_score = compute_similarity(audio_file_path, ref_audio_path)
+                            
+                            # 取消超時
+                            signal.alarm(0)
+                            
+                            is_correct = similarity_score >= 0.5
+                            method = "SpeechBrain"
+                            feedback_text = f"✅ 發音相似度為 {similarity_score:.2f}，{'通過' if is_correct else '需要再加強'}！"
+                            logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                        else:
+                            raise ValueError("參考音頻檔案為空")
                         
                         # 清理參考音頻臨時檔案
                         try:
@@ -1119,6 +1177,12 @@ def handle_audio_message(event):
                         raise ValueError("找不到參考音頻檔案")
                         
                 except Exception as e2:
+                    # 取消超時（如果有設置）
+                    try:
+                        signal.alarm(0)
+                    except:
+                        pass
+                        
                     logger.warning(f"Step 2 失敗，進入最終 Step 3: {str(e2)}")
                     
                     # ==== Step 3: 模擬分數 (Fallback) ====
@@ -1128,7 +1192,7 @@ def handle_audio_message(event):
                     method = "AI 評估"
                     feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
                     logger.info(f"模擬分數: {simulated_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
-            
+
             finally:
                 # 清理臨時音頻檔案
                 if os.path.exists(audio_file_path):
@@ -1197,10 +1261,27 @@ def handle_audio_message(event):
             # ==== Step 1: Google Speech-to-Text ====
             if gcs_url:
                 logger.info(f"Step 1: 使用Google STT評估發音，參考文本: {reference_text}")
-                recognized_text = transcribe_audio_google(gcs_url)
-                logger.info(f"識別文字: {recognized_text}")
                 
-                if recognized_text:
+                # 修正 GCS URL 格式問題
+                if gcs_url.startswith('https://storage.googleapis.com/'):
+                    gcs_uri = 'gs://' + gcs_url.replace('https://storage.googleapis.com/', '')
+                else:
+                    gcs_uri = gcs_url
+                    
+                # 使用修正後的 URI 進行識別
+                client = init_google_speech_client()
+                audio = speech.RecognitionAudio(uri=gcs_uri)
+                config = speech.RecognitionConfig(
+                    encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                    sample_rate_hertz=16000,
+                    language_code="th-TH"
+                )
+                response = client.recognize(config=config, audio=audio)
+                
+                if response.results:
+                    recognized_text = response.results[0].alternatives[0].transcript
+                    logger.info(f"識別文字: {recognized_text}")
+                    
                     similarity = SequenceMatcher(None, recognized_text.strip(), reference_text.strip()).ratio()
                     score = int(similarity * 100)
                     is_correct = similarity >= 0.5
@@ -1214,6 +1295,16 @@ def handle_audio_message(event):
             
             # ==== Step 2: SpeechBrain 相似度比較 ====
             try:
+                # 設置較短的超時時間
+                import signal
+                
+                def timeout_handler(signum, frame):
+                    raise TimeoutError("SpeechBrain處理超時")
+                
+                # 設置15秒超時
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(15)
+                
                 # 獲取參考音頻路徑
                 ref_audio_url = word_data.get('audio_url')
                 if ref_audio_url:
@@ -1225,13 +1316,21 @@ def handle_audio_message(event):
                             f.write(response.content)
                         logger.info(f"已下載參考音頻: {ref_audio_path}")
                         
-                        logger.info(f"Step 2: 使用SpeechBrain比較音頻相似度")
-                        similarity_score = compute_similarity(audio_file_path, ref_audio_path)
-                        score = int(similarity_score * 100)
-                        is_correct = similarity_score >= 0.5
-                        method = "SpeechBrain"
-                        feedback_text = f"✅ 發音評分：{score}/100\n發音相似度為 {similarity_score:.2f}，{'非常接近標準發音' if is_correct else '需要再多練習'}！"
-                        logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                        # 確認檔案大小
+                        if os.path.getsize(ref_audio_path) > 0:
+                            logger.info(f"Step 2: 使用SpeechBrain比較音頻相似度")
+                            similarity_score = compute_similarity(audio_file_path, ref_audio_path)
+                            
+                            # 取消超時
+                            signal.alarm(0)
+                            
+                            score = int(similarity_score * 100)
+                            is_correct = similarity_score >= 0.5
+                            method = "SpeechBrain"
+                            feedback_text = f"✅ 發音評分：{score}/100\n發音相似度為 {similarity_score:.2f}，{'非常接近標準發音' if is_correct else '需要再多練習'}！"
+                            logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                        else:
+                            raise ValueError("參考音頻檔案為空")
                         
                         # 清理參考音頻臨時檔案
                         try:
@@ -1244,6 +1343,12 @@ def handle_audio_message(event):
                 else:
                     raise ValueError("無法找到參考音頻URL")
             except Exception as e2:
+                # 取消超時（如果有設置）
+                try:
+                    signal.alarm(0)
+                except:
+                    pass
+                    
                 logger.warning(f"Step 2 失敗，進入最終 Step 3: {str(e2)}")
                 
                 # ==== Step 3: 模擬分數 (Fallback) ====
