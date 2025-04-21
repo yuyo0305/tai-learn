@@ -82,7 +82,12 @@ logger.info(f"初始化應用程式... LINE Bot, Azure Speech 和 GCS 服務已�
 # === Google Cloud Storage 輔助函數 ===
 
 def init_gcs_client():
+    """初始化 Google Cloud Storage 客戶端"""
     try:
+        # 嘗試從環境變數獲取認證
+        import json
+        import tempfile
+        
         # 1. 首先嘗試使用環境變數中的 JSON 內容
         creds_json = os.environ.get('GCS_CREDENTIALS')
         if creds_json:
@@ -90,31 +95,30 @@ def init_gcs_client():
             with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as temp:
                 temp.write(creds_json.encode('utf-8'))
                 temp_file_name = temp.name
-
+            
             # 使用臨時文件初始化客戶端
             storage_client = storage.Client.from_service_account_json(temp_file_name)
-
+                       
             # 使用後刪除臨時文件
             os.unlink(temp_file_name)
             logger.info("使用環境變數 GCS_CREDENTIALS 成功初始化 Google Cloud Storage 客戶端")
             return storage_client
-
+            
         # 2. 嘗試使用本地金鑰文件 (本地開發使用)
-        local_keyfile_path = r"C:\\Users\\ids\\Desktop\\泰文學習的論文資料(除了)程式相關\\泰文聊天機器人google storage 金鑰.json"
+        local_keyfile_path = r"C:\Users\ids\Desktop\泰文學習的論文資料(除了)程式相關\泰文聊天機器人google storage 金鑰.json"
         if os.path.exists(local_keyfile_path):
             storage_client = storage.Client.from_service_account_json(local_keyfile_path)
             logger.info("使用本地金鑰文件成功初始化 Google Cloud Storage 客戶端")
             return storage_client
-
+            
         # 3. 嘗試使用默認認證
         storage_client = storage.Client()
         logger.info("使用默認認證成功初始化 Google Cloud Storage 客戶端")
         return storage_client
-
+    
     except Exception as e:
         logger.error(f"初始化 Google Cloud Storage 客戶端失敗: {str(e)}")
         return None
-
 
 def upload_file_to_gcs(file_content, destination_blob_name, content_type=None):
     """上傳檔案到 Google Cloud Storage 並返回公開 URL"""
@@ -411,7 +415,7 @@ thai_data = {
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E9%A3%9B%E6%A9%9F.jpg'},
         '船': {'thai': 'เรือ', 'pronunciation': 'ruea', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%88%B9.jpg',
-             'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%88%B9.jpg'},
+             'image_url': 'https://storage.googleapis.com/[YOUR_BUCKET]/images/boat.jpg'},
         '腳踏車': {'thai': 'จักรยาน', 'pronunciation': 'jak-ka-yan', 'tone': 'low-low-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%85%B3%E8%B8%8F%E8%BB%8A.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%85%B3%E8%B8%8F%E8%BB%8A.jpg'},
@@ -1013,8 +1017,6 @@ def get_audio_content_with_gcs(message_id, user_id):
             pass
 
 
-
-
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     """處理音頻消息，主要用於發音評估或考試模式"""
@@ -1039,10 +1041,11 @@ def handle_audio_message(event):
 
             try:
                 try:
-                    gcs_path = gcs_url.replace("https://storage.googleapis.com/", "gs://")
-                    recognized_text = transcribe_audio_google(gcs_path)
+                    recognized_text = transcribe_audio_google(gcs_url)
                     logger.info(f"識別文字: {recognized_text}")
+
                     correct_word = current_q["thai"]
+                    from difflib import SequenceMatcher
                     similarity = SequenceMatcher(None, recognized_text.strip(), correct_word.strip()).ratio()
                     is_correct = (correct_word in recognized_text) or (similarity >= 0.5)
                     method = "Google STT（關鍵詞+相似度）"
@@ -1055,98 +1058,37 @@ def handle_audio_message(event):
                         is_correct = similarity_score >= 0.5
                         method = "SpeechBrain"
                     except Exception as e2:
-                        logger.warning(f"SpeechBrain 比對也失敗：{str(e2)}，改為模擬評估")
+                        logger.warning(f"❌ 語音比對也失敗，啟用模擬 fallback：{str(e2)}")
                         is_correct = True
-                        method = "智慧預估"
+                        method = "模擬估分"
             finally:
                 if os.path.exists(audio_file_path):
                     os.remove(audio_file_path)
                     logger.info(f"✅ 已移除臨時音訊：{audio_file_path}")
 
-                if is_correct:
-                    session["correct"] += 1
-                    feedback_text = f"✅ 正確！您的發音和「{current_q['thai']}」非常接近，請繼續保持！（評分方式：{method}）"
-                else:
-                    feedback_text = f"❌ 錯誤，正確答案是「{current_q['thai']}」。（評分方式：{method}）"
+            if is_correct:
+                session["correct"] += 1
+                feedback_text = f"✅ 正確！您的發音和「{current_q['thai']}」非常接近，請繼續保持！（評分方式：{method}）"
+            else:
+                feedback_text = f"❌ 錯誤，正確答案是「{current_q['thai']}」。（評分方式：{method}）"
 
-                feedback = TextSendMessage(
-                    text=feedback_text +
-                    "📘 此為 AI 建議評分，請持續練習，發音會越來越好喔！"
-                )
-
-                session["current"] += 1
-                if session["current"] >= len(session["questions"]):
-                    final_score = session["correct"]
-                    total = len(session["questions"])
-                    del exam_sessions[user_id]
-                    summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
-                    line_bot_api.reply_message(event.reply_token, [feedback, summary])
-                else:
-                    next_q = send_exam_question(user_id)
-                    reply = [feedback, next_q] if isinstance(next_q, (list, tuple)) else [feedback, next_q]
-                    line_bot_api.reply_message(event.reply_token, reply)
-            return
-
-    elif user_data.get("current_activity") == "echo_practice":
-        current_vocab_key = user_data.get("current_vocab")
-        if not current_vocab_key or current_vocab_key not in thai_data['basic_words']:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="⚠️ 無法取得目前的練習詞彙，請先從主選單進入發音練習")
+            feedback = TextSendMessage(
+                text=feedback_text + 
+                "📘 此為 AI 建議評分，請持續練習，發音會越來越好喔！"
             )
+
+            session["current"] += 1
+            if session["current"] >= len(session["questions"]):
+                final_score = session["correct"]
+                total = len(session["questions"])
+                del exam_sessions[user_id]
+                summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
+                line_bot_api.reply_message(event.reply_token, [feedback, summary])
+            else:
+                next_q = send_exam_question(user_id)
+                reply = [feedback, next_q] if isinstance(next_q, (list, tuple)) else [feedback, next_q]
+                line_bot_api.reply_message(event.reply_token, reply)
             return
-
-        current_vocab = thai_data['basic_words'][current_vocab_key]
-        audio_content, gcs_url, audio_file_path = get_audio_content_with_gcs(event.message.id, user_id)
-
-        if not audio_file_path or not os.path.exists(audio_file_path):
-            line_bot_api.reply_message(
-                event.reply_token, TextSendMessage(text="❌ 找不到音訊檔案，請再試一次")
-            )
-            return
-
-        try:
-            try:
-                gcs_path = gcs_url.replace("https://storage.googleapis.com/", "gs://")
-                recognized_text = transcribe_audio_google(gcs_path)
-                similarity = SequenceMatcher(None, recognized_text.strip(), current_vocab["thai"].strip()).ratio()
-                score = int(similarity * 100)
-                method = "Google STT（關鍵詞+相似度）"
-            except Exception as e:
-                logger.warning(f"Google STT 辨識失敗：{str(e)}，改用 SpeechBrain fallback")
-                ref_audio_path = os.path.join("static", "audio_ref", current_vocab_key + ".wav")
-                try:
-                    similarity_score = compute_similarity(audio_file_path, ref_audio_path)
-                    score = int(similarity_score * 100)
-                    method = "SpeechBrain"
-                except Exception as e2:
-                    logger.warning(f"SpeechBrain 比對也失敗：{str(e2)}，改為模擬評估")
-                    score = random.randint(75, 90)
-                    method = "智慧預估"
-        finally:
-            if os.path.exists(audio_file_path):
-                os.remove(audio_file_path)
-
-        save_progress(user_id, current_vocab_key, score)
-        response_text = f"📢 發音評分：{score}/100\n評分方式：{method}\n✅ 發音清晰、繼續保持！"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response_text))
-        return
-
-
-
-
-from linebot.models import FollowEvent
-
-@handler.add(FollowEvent)
-def handle_follow(event):
-    user_id = event.source.user_id
-    logger.info(f"新用戶加入 LINE Bot：{user_id}")
-    welcome_message = TextSendMessage(
-        text="👋 歡迎加入泰語學習聊天機器人！\n請輸入「開始學習」來開啟主選單。"
-    )
-    line_bot_api.reply_message(event.reply_token, welcome_message)
-
-
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     """處理文字訊息"""
@@ -1311,7 +1253,77 @@ def handle_text_message(event):
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
 
+def handle_exam_message(event):
+    user_id = event.source.user_id
+    message_text = event.message.text.strip()
 
+    # 啟動考試
+    if message_text == "開始綜合考試":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+    if message_text == "開始數字考試":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="numbers"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+
+    if message_text == "開始動物考試":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="animals"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+
+    if message_text == "開始食物考試":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="food"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+
+    if message_text == "開始交通工具考試":
+        exam_sessions[user_id] = {
+            "questions": generate_exam(thai_data, category="transportation"),
+            "current": 0,
+            "correct": 0
+        }
+        return send_exam_question(user_id)
+    # 正在考試狀態中（處理作答）
+    if user_id in exam_sessions:
+        session = exam_sessions[user_id]
+        question = session["questions"][session["current"]]
+
+        # 判斷答題類型
+        if question["type"] == "audio_choice":
+            user_answer = message_text.strip()
+            if score_image_choice(user_answer, question["answer"]):
+                session["correct"] += 1
+
+        # 換下一題
+                session["current"] += 1
+        if session["current"] >= len(session["questions"]):
+            total = len(session["questions"])
+            score = session["correct"]
+
+            # ✅ 儲存考試結果到 Firebase
+            save_exam_result(user_id, score, total, exam_type="綜合考試")
+
+            del exam_sessions[user_id]
+            return TextSendMessage(text=f"✅ 考試結束！\n您答對了 {score}/{total} 題。")
+
+        return send_exam_question(user_id)
+
+
+    # 非考試狀態，交由其他處理
+    return None
 def send_exam_question(user_id):
     session = exam_sessions[user_id]
     question = session["questions"][session["current"]]
@@ -1327,7 +1339,10 @@ def send_exam_question(user_id):
         audio_url = question["audio_url"]
         options = question["choices"]
 
-        quick_reply_items = [QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"])) for opt in options] + [QuickReplyButton(action=MessageAction(label="跳過", text="跳過"))]
+        quick_reply_items = [
+            QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"]))
+            for opt in options
+        ]
 
         return [
             TextSendMessage(text=f"第 {q_num} 題：請聽音檔後從以下選項選出正確答案"),
@@ -1467,7 +1482,7 @@ def start_echo_practice(user_id):
     # 添加發音指導
     message_list.append(
         TextSendMessage(
-            text=f"🧠【回音法 Echo Method】\n\n1. Listen：聽一句泰文單字\n2. Echo：靜下來 3 秒，在腦中重播剛聽到的聲音與語調\n3. Mimic：大聲模仿你腦中的回音\n\n📣 練習詞彙：{word_data['thai']}\n發音：{word_data['pronunciation']}\n\n請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
+            text=f"請聽標準發音，然後跟著練習：\n\n泰語：{word_data['thai']}\n發音：{word_data['pronunciation']}\n\n請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
         )
     )
     
