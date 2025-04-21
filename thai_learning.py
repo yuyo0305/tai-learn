@@ -2233,15 +2233,7 @@ def create_flex_memory_game(cards, game_state, user_id):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
-    # 主程序入口 (放在最後)
-if __name__ == "__main__":
-    # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
-    port = int(os.environ.get('PORT', 5000))
-    logger.info(f"應用啟動在端口 {port}")
-    app.run(host='0.0.0.0', port=port)
     
-    
-
 
 def handle_exam_message(event):
     """處理考試指令並啟動考試流程"""
@@ -2270,3 +2262,12 @@ def handle_exam_message(event):
     }
 
     return send_exam_question(user_id)
+
+
+# 主程序入口 (放在最後)
+if __name__ == "__main__":
+    # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
+    port = int(os.environ.get('PORT', 5000))
+    logger.info(f"應用啟動在端口 {port}")
+    app.run(host='0.0.0.0', port=port)
+    
