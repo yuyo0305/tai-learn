@@ -1093,14 +1093,14 @@ def handle_text_message(event):
     logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
     
     # 考試指令過濾（包括「跳過」指令）
-    if text.startswith("開始") and "考" in text or text == "跳過":
+    if text.startswith("開始") and "考" in text or text == "跳過" or (user_id in exam_sessions and exam_sessions[user_id]["questions"][exam_sessions[user_id]["current"]]["type"] == "audio_choice"):
         result = handle_exam_message(event)
         if result:
             if isinstance(result, list):
                 line_bot_api.reply_message(event.reply_token, result)
-            else:
-                line_bot_api.reply_message(event.reply_token, [result])
-            return
+        else:
+            line_bot_api.reply_message(event.reply_token, [result])
+        return
     
     # 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
@@ -1313,35 +1313,63 @@ def handle_exam_message(event):
         
     # 正在考試狀態中（處理作答）
     if user_id in exam_sessions:
-        session = exam_sessions[user_id]
-        question = session["questions"][session["current"]]
+    session = exam_sessions[user_id]
+    question = session["questions"][session["current"]]
+    
+    # 判斷答題類型
+    if question["type"] == "audio_choice":
+        user_answer = message_text.strip()
+        correct_answer = question["answer"]
+        
+        # 檢查答案是否正確
+        is_correct = score_image_choice(user_answer, correct_answer)
+        
+        # 準備反饋訊息
+        if is_correct:
+            session["correct"] += 1
+            feedback = f"✅ 正確！「{user_answer}」是正確答案。"
+        else:
+            feedback = f"❌ 錯誤，正確答案是「{correct_answer}」。"
+        
+        feedback_message = TextSendMessage(text=feedback)
+    else:
+        feedback_message = None
 
-        # 判斷答題類型
-        if question["type"] == "audio_choice":
-            user_answer = message_text.strip()
-            if score_image_choice(user_answer, question["answer"]):
-                session["correct"] += 1
+    # 換下一題
+    session["current"] += 1
+    if session["current"] >= len(session["questions"]):
+        total = len(session["questions"])
+        score = session["correct"]
 
-        # 換下一題
-        session["current"] += 1
-        if session["current"] >= len(session["questions"]):
-            total = len(session["questions"])
-            score = session["correct"]
+        # 儲存考試結果到 Firebase
+        save_exam_result(user_id, score, total, exam_type="綜合考試")
 
-            # 儲存考試結果到 Firebase
-            save_exam_result(user_id, score, total, exam_type="綜合考試")
-
-            del exam_sessions[user_id]
+        del exam_sessions[user_id]
+        
+        # 如果有反饋，返回反饋和結果；否則只返回結果
+        if feedback_message:
+            return [
+                feedback_message,
+                TextSendMessage(text=f"✅ 考試結束！\n您答對了 {score}/{total} 題。")
+            ]
+        else:
             return TextSendMessage(text=f"✅ 考試結束！\n您答對了 {score}/{total} 題。")
 
-        return send_exam_question(user_id)
+    # 還有更多題目
+    next_question = send_exam_question(user_id)
+    
+    # 如果有反饋，返回反饋和下一題；否則只返回下一題
+    if feedback_message:
+        if isinstance(next_question, list):
+            return [feedback_message] + next_question
+        else:
+            return [feedback_message, next_question]
+    else:
+        return next_question
 
-    # 非考試狀態，交由其他處理
+# 非考試狀態，交由其他處理
     return None
 
-
-    # 非考試狀態，交由其他處理
-    return None
 def send_exam_question(user_id):
     session = exam_sessions[user_id]
     question = session["questions"][session["current"]]
