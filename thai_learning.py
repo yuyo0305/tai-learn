@@ -1039,6 +1039,19 @@ def get_audio_content_with_gcs(message_id, user_id):
         except Exception as e:
             logger.warning(f"清除臨時檔案失敗: {str(e)}")
             pass
+from linebot.models import FollowEvent
+
+@handler.add(FollowEvent)
+def handle_follow(event):
+    welcome_text = (
+        "👋 歡迎使用【泰語學習機器人】！\n\n"
+        "你可以輸入以下指令來開始學習：\n"
+        "🗣 開始學習：進行泰語學習（回音法,圖像法......）\n"
+        "🎓 考試模式：選擇主題進行 10 題測驗\n"
+        "🔁 跳過：考試中略過當前題目\n\n"
+        "現在就輸入「開始學習」試試看吧！📘"
+    )
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=welcome_text))
 
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
@@ -1115,7 +1128,7 @@ def handle_audio_message(event):
                             elif similarity >= 0.4:
                                 feedback_text = f"✅ 進階級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
                             else:
-                                feedback_text = f"✅ 基礎級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                                feedback_text = f"✅s 基礎級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
                             score = enhanced_score
                             logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")    
                 
@@ -1887,13 +1900,19 @@ def start_echo_practice(user_id):
             )
         )
     
-    # 添加發音指導
+    # 添加回音法三步驟與詞彙發音提示
     message_list.append(
         TextSendMessage(
-            text=f"請聽標準發音，然後跟著練習：\n\n泰語：{word_data['thai']}\n發音：{word_data['pronunciation']}\n\n請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
-        )
+            text="🧠【回音法 Echo Method】\n\n"
+                 "1. Listen：聽一句泰文單字\n"
+                 "2. Echo：靜下來 3 秒，在腦中重播剛聽到的聲音與語調\n"
+                 "3. Mimic：大聲模仿你腦中的回音\n\n"
+                 f"📣 練習詞彙：{word_data['thai']}\n"
+                 f"發音：{word_data['pronunciation']}\n\n"
+                 "請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
     )
-    
+)
+   
     # 添加音調指導
     tone_info = ""
     for part in word_data['tone'].split('-'):
