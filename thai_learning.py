@@ -1154,6 +1154,20 @@ def handle_text_message(event):
     user_data = user_data_manager.get_user_data(user_id)
     text = event.message.text
     
+    
+    if text == "跳過" and user_id in exam_sessions:
+        session = exam_sessions[user_id]
+        session["current"] += 1
+        if session["current"] >= len(session["questions"]):
+            final_score = session["correct"]
+            total = len(session["questions"])
+            del exam_sessions[user_id]
+            summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
+            line_bot_api.reply_message(event.reply_token, summary)
+        else:
+            next_q = send_exam_question(user_id)
+            line_bot_api.reply_message(event.reply_token, next_q if isinstance(next_q, list) else [next_q])
+        return
     logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
     
 
@@ -2246,7 +2260,18 @@ def handle_exam_message(event):
         return TextSendMessage(text="⚠️ 找不到相關考試類型，請確認輸入是否正確")
 
     # 抽出題目：5 題唸出圖片 + 5 題音檔選擇題
-    questions = exam_data[topic]
+    
+    category_map = {
+        "日常用語": "daily_phrases",
+        "數字": "numbers",
+        "動物": "animals",
+        "食物": "food",
+        "交通工具": "transportation",
+        "綜合": None
+    }
+    category_key = category_map.get(topic)
+    questions = generate_exam(thai_data, category_key)
+    
     random.shuffle(questions)
     selected_questions = []
 
