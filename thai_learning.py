@@ -2708,7 +2708,10 @@ def create_flex_memory_game(cards, game_state, user_id):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
-# 定期清理臨時檔案
+import threading
+import time  # ✅ 加上這行
+
+# 定期清理臨時檔案函式
 def cleanup_temp_files():
     """清理臨時檔案"""
     try:
@@ -2726,7 +2729,7 @@ def cleanup_temp_files():
             file_path = os.path.join(audio_dir, filename)
             if os.path.isfile(file_path):
                 mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
-                if (now - mtime).total_seconds() > 3600:  # 1小時前的檔案
+                if (now - mtime).total_seconds() > 3600:
                     try:
                         os.remove(file_path)
                         logger.info(f"已清理臨時檔案: {file_path}")
@@ -2735,11 +2738,16 @@ def cleanup_temp_files():
     except Exception as e:
         logger.error(f"清理臨時檔案失敗: {str(e)}")
 
-# 啟動定期清理線程
-import threading
-cleanup_thread = threading.Thread(target=lambda: (time.sleep(1800), cleanup_temp_files()), daemon=True)
-cleanup_thread.start()   
-      
+# 背景執行清理：每 30 分鐘跑一次
+def periodic_cleanup():
+    while True:
+        time.sleep(1800)  # 每 30 分鐘執行
+        cleanup_temp_files()
+
+# 啟動執行緒
+cleanup_thread = threading.Thread(target=periodic_cleanup, daemon=True)
+cleanup_thread.start()
+
     # 主程序入口 (放在最後)
 if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
