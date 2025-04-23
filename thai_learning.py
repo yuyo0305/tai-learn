@@ -226,6 +226,26 @@ def callback():
         logger.info(f"收到回調，簽名: {signature}")
         logger.info(f"回調內容: {body}")
         
+        # 檢查是否為重複事件
+        data = json.loads(body)
+        if 'events' in data and len(data['events']) > 0:
+            event_id = data['events'][0].get('webhookEventId', '')
+            if event_id and event_id in processed_events:
+                logger.warning(f"收到重複事件 ID: {event_id}，忽略處理")
+                return 'OK'
+                
+            # 記錄已處理的事件
+            if event_id:
+                processed_events[event_id] = datetime.now()
+                
+            # 清理舊事件記錄，避免佔用過多記憶體
+            if len(processed_events) > 1000:
+                now = datetime.now()
+                old_keys = [k for k, v in processed_events.items() 
+                           if (now - v).total_seconds() > 3600]
+                for k in old_keys:
+                    processed_events.pop(k, None)
+        
         handler.handle(body, signature)
     except InvalidSignatureError as e:
         logger.error(f"簽名驗證失敗: {str(e)}")
@@ -1495,11 +1515,11 @@ def handle_text_message(event):
             line_bot_api.reply_message(event.reply_token, [result])
         return
     
-    # 更新用戶活躍狀態
+# 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
 
     # 記憶遊戲相關指令
-    if text == "開始記憶遊戲" or text.startswith("記憶遊戲主題:") or text.startswith("翻牌:") or text.startswith("已翻開:") or text.startswith("播放音頻:"):
+    if text == "開始記憶遊戲" or text.startswith("記憶遊戲主題:") or text.startswith("翻牌:") or text.startswith("已翻開:"):
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
@@ -1508,20 +1528,45 @@ def handle_text_message(event):
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
-    # 播放音頻請求
-    if text.startswith("播放音頻:"):
+    # 一般播放音頻請求
+    elif text.startswith("播放音頻:"):
         word = text[5:]  # 提取詞彙
+        logger.info(f"用戶請求播放音頻: {word}")
+        
         if word in thai_data['basic_words']:
             word_data = thai_data['basic_words'][word]
             if 'audio_url' in word_data and word_data['audio_url']:
+                logger.info(f"播放詞彙音頻: {word} - {word_data['audio_url']}")
+                try:
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        AudioSendMessage(
+                            original_content_url=word_data['audio_url'],
+                            duration=3000  # 假設音訊長度為3秒
+                        )
+                    )
+                    return
+                except Exception as e:
+                    logger.error(f"發送音頻時出錯: {str(e)}")
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text="發送音頻時出錯，請再試一次")
+                    )
+                    return
+            else:
+                logger.warning(f"詞彙 {word} 沒有音頻 URL")
                 line_bot_api.reply_message(
                     event.reply_token,
-                    AudioSendMessage(
-                        original_content_url=word_data['audio_url'],
-                        duration=3000  # 假設音訊長度為3秒
-                    )
+                    TextSendMessage(text=f"抱歉，找不到「{word}」的音頻")
                 )
                 return
+        else:
+            logger.warning(f"找不到詞彙: {word}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"抱歉，找不到「{word}」這個詞彙")
+            )
+            return
     
     # 主選單與基本導航
     if text == "開始學習" or text == "返回主選單":
