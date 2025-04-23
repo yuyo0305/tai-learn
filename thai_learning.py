@@ -43,28 +43,55 @@ speaker_model = SpeakerRecognition.from_hparams(
 )
 
 def compute_similarity(audio1_path, audio2_path):
-    """回傳兩段語音的相似度分數（0～1）"""
+    """回傳兩段語音的相似度分數（0～1），使用 threading 處理超時"""
     try:
-        # 添加超時控制
-        import signal
+        # 使用 threading 處理超時
+        import threading
+        import time
         
-        def timeout_handler(signum, frame):
-            raise TimeoutError("SpeechBrain 處理超時")
+        result = [None]
+        error = [None]
+        finished = [False]
+        
+        def process():
+            try:
+                # 執行語音比對
+                score, _ = speaker_model.verify_files(audio1_path, audio2_path)
+                result[0] = float(score)
+            except Exception as e:
+                error[0] = str(e)
+            finally:
+                finished[0] = True
+        
+        # 創建並啟動線程
+        thread = threading.Thread(target=process)
+        thread.daemon = True
+        thread.start()
+        
+        # 設定最長等待時間
+        max_wait = 15
+        wait_step = 0.5
+        waited = 0
+        
+        while not finished[0] and waited < max_wait:
+            time.sleep(wait_step)
+            waited += wait_step
+        
+        if not finished[0]:
+            logger.warning(f"SpeechBrain 處理超時 ({max_wait}秒)")
+            return 0.65  # 返回中等相似度作為預設值
+        
+        if error[0]:
+            logger.warning(f"相似度計算失敗: {error[0]}")
+            return 0.65
             
-        # 設置 15 秒超時
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(15)
+        if result[0] is not None:
+            # 確保值在 0-1 範圍內
+            return max(0, min(1, result[0]))
         
-        # 嘗試計算相似度
-        score, _ = speaker_model.verify_files(audio1_path, audio2_path)
-        
-        # 取消超時
-        signal.alarm(0)
-        
-        return float(score)
+        return 0.65
     except Exception as e:
-        logger.warning(f"相似度計算失敗: {str(e)}")
-        # 返回一個適中的默認值
+        logger.warning(f"相似度計算整體失敗: {str(e)}")
         return 0.65
 
 # 設置日誌
@@ -1064,6 +1091,14 @@ def handle_audio_message(event):
     # 考試模式處理
     if user_id in exam_sessions:
         logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
+        # ✅ 回覆「評分中」提示
+    try:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="✅ 收到語音，評分中...")
+        )
+    except Exception as e:
+        logger.warning(f"⚠️ 回覆評分中訊息失敗: {str(e)}")
         session = exam_sessions[user_id]
         current_q = session["questions"][session["current"]]
         total = len(session["questions"])
@@ -1304,7 +1339,7 @@ def handle_audio_message(event):
                     logger.info(f"識別文字: {recognized_text}")
                     
                     similarity = SequenceMatcher(None, recognized_text.strip(), reference_text.strip()).ratio()
-                    enhanced_score = min(int(similarity * 150), 100)  # 放大分數，最高100分
+                    enhanced_score = min(int(similarity * 225), 100)  # 放大分數，最高100分
                     is_correct = similarity >= 0.3
                     method = "Google STT"
                     if similarity >= 0.6:
@@ -1468,7 +1503,11 @@ def handle_text_message(event):
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
-    
+    # 記憶遊戲中的播放音頻請求
+    elif text.startswith("播放音頻:") and 'game_state' in user_data and 'memory_game' in user_data['game_state']:
+        game_response = handle_memory_game(user_id, text)
+        line_bot_api.reply_message(event.reply_token, game_response)
+        return
     # 播放音頻請求
     if text.startswith("播放音頻:"):
         word = text[5:]  # 提取詞彙
@@ -2533,12 +2572,6 @@ def create_flex_memory_game(cards, game_state, user_id):
     # 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
 
-    # 記憶遊戲相關指令
-    if text == "開始記憶遊戲" or text.startswith("記憶遊戲主題:") or text.startswith("翻牌:") or text.startswith("已翻開:") or text.startswith("播放音頻:"):
-        game_response = handle_memory_game(user_id, text)
-        line_bot_api.reply_message(event.reply_token, game_response)
-        return
-
     
     # 播放音頻請求
     if text.startswith("播放音頻:"):
@@ -2675,6 +2708,38 @@ def create_flex_memory_game(cards, game_state, user_id):
             event.reply_token,
             TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
         )
+# 定期清理臨時檔案
+def cleanup_temp_files():
+    """清理臨時檔案"""
+    try:
+        temp_dir = os.environ.get('TEMP', '/tmp')
+        audio_dir = os.path.join(temp_dir, 'temp_audio')
+        
+        if not os.path.exists(audio_dir):
+            return
+            
+        now = datetime.now()
+        for filename in os.listdir(audio_dir):
+            if not filename.startswith('temp_'):
+                continue
+                
+            file_path = os.path.join(audio_dir, filename)
+            if os.path.isfile(file_path):
+                mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
+                if (now - mtime).total_seconds() > 3600:  # 1小時前的檔案
+                    try:
+                        os.remove(file_path)
+                        logger.info(f"已清理臨時檔案: {file_path}")
+                    except:
+                        pass
+    except Exception as e:
+        logger.error(f"清理臨時檔案失敗: {str(e)}")
+
+# 啟動定期清理線程
+import threading
+cleanup_thread = threading.Thread(target=lambda: (time.sleep(1800), cleanup_temp_files()), daemon=True)
+cleanup_thread.start()   
+      
     # 主程序入口 (放在最後)
 if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
