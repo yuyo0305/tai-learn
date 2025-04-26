@@ -1295,12 +1295,22 @@ def handle_audio_message(event):
                 total = len(session["questions"])
                 del exam_sessions[user_id]
                 summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
-                line_bot_api.reply_message(event.reply_token, [feedback, summary])
-            else:
-                next_q = send_exam_question(user_id)
-                reply = [feedback, next_q] if isinstance(next_q, (list, tuple)) else [feedback, next_q]
-                line_bot_api.reply_message(event.reply_token, reply)
-            return
+                line_bot_api.push_message(user_id, [feedback, summary])  # 使用 push_message
+    else:
+        # 先發送評分反饋
+        line_bot_api.push_message(user_id, feedback)
+    
+        # 短暫延遲後發送下一題
+        import time
+        time.sleep(0.5)  # 延遲0.5秒
+    
+        # 獲取並發送下一題
+        next_q = send_exam_question(user_id)
+        if isinstance(next_q, (list, tuple)):
+            line_bot_api.push_message(user_id, next_q)
+        else:
+            line_bot_api.push_message(user_id, [next_q])
+    return
     
     # 一般發音練習模式 (非考試模式)
     try:
