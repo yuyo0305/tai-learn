@@ -1279,19 +1279,21 @@ def handle_audio_message(event):
             if is_correct:
                 session["correct"] += 1
 
-# ✅ 改這裡：統一根據模式簡化 feedback_text
+            # ✅ 改這裡：統一根據模式簡化 feedback_text
             if user_id in exam_sessions:
-               feedback_text = f"📝 發音評分：{score}/100"
+                feedback_text = f"📝 發音評分：{score}/100"
+                feedback = TextSendMessage(
+                    text=feedback_text
+    )
             else:
                 if is_correct:
                     feedback_text = f"✅ 發音很接近標準！（分數：{score}/100）"
                 else:
                     feedback_text = f"❌ 需要再加強。（分數：{score}/100）"
             feedback = TextSendMessage(
-                text=feedback_text + 
+                text=feedback_text +
                 "\n📘 此為 AI 評估，請持續練習，發音會越來越好喔！"
-            )
-
+    )
             session["current"] += 1
             if session["current"] >= len(session["questions"]):
                 final_score = session["correct"]
@@ -1448,9 +1450,9 @@ def handle_audio_message(event):
                 
                 # ==== Step 3: 模擬分數 (Fallback) ====
                 logger.info(f"Step 3: 使用模擬評分")
-                simulated_score = random.randint(60, 90)
+                simulated_score = random.randint(40, 80)
                 score = simulated_score
-                is_correct = simulated_score >= 70
+                is_correct = simulated_score >= 60
                 method = "AI 評估"
                 feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
                 logger.info(f"模擬分數: {simulated_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
