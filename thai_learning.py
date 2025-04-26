@@ -1278,12 +1278,15 @@ def handle_audio_message(event):
             # 根據評估結果更新考試成績
             if is_correct:
                 session["correct"] += 1
-                if not feedback_text:
-                    feedback_text = f"✅ 正確！您的發音和「{current_q['thai']}」非常接近，請繼續保持！（評分方式：{method}）"
-            else:
-                if not feedback_text:
-                    feedback_text = f"❌ 需要再加強，正確答案是「{current_q['thai']}」。（評分方式：{method}）"
 
+# ✅ 改這裡：統一根據模式簡化 feedback_text
+            if user_id in exam_sessions:
+               feedback_text = f"📝 發音評分：{score}/100"
+            else:
+                if is_correct:
+                    feedback_text = f"✅ 發音很接近標準！（分數：{score}/100）"
+                else:
+                    feedback_text = f"❌ 需要再加強。（分數：{score}/100）"
             feedback = TextSendMessage(
                 text=feedback_text + 
                 "\n📘 此為 AI 評估，請持續練習，發音會越來越好喔！"
