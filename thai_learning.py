@@ -107,7 +107,7 @@ load_dotenv()  # 載入 .env 文件中的環境變數 (本地開發用)
 # === 應用初始化 ===
 app = Flask(__name__)
 exam_sessions = {}  # user_id 對應目前考試狀態
-
+processed_events = set()
 # LINE Bot設定
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', 'YOUR_CHANNEL_ACCESS_TOKEN')
 LINE_CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET', 'YOUR_CHANNEL_SECRET')
