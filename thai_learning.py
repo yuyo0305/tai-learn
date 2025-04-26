@@ -1487,7 +1487,8 @@ def handle_audio_message(event):
             template=buttons_template
         ))
         
-        line_bot_api.reply_message(event.reply_token, response_messages)
+        line_bot_api.push_message(user_id, response_messages)
+
         
     except Exception as e:
         logger.error(f"處理音頻評估時發生錯誤: {str(e)}", exc_info=True)
