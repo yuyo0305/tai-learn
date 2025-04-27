@@ -1305,16 +1305,20 @@ def handle_audio_message(event):
                 line_bot_api.push_message(user_id, summary)
             else:
                 # 短暫延遲後發送下一題
-                import time
-                time.sleep(0.5)  # 延遲0.5秒
+                logger.info(f"用戶 {user_id} 完成考試題目 {session['current']}/{len(session['questions'])}, 分數: {session['correct']}")
+                logger.info(f"嘗試發送下一題，當前考試狀態: {exam_sessions.get(user_id, '已刪除')}")
                 
                 # 獲取並發送下一題
                 next_q = send_exam_question(user_id)
-                if isinstance(next_q, list):
-                    line_bot_api.push_message(user_id, next_q)
-                else:
-                    line_bot_api.push_message(user_id, [next_q])
-        
+                logger.info(f"下一題生成結果類型: {type(next_q)}")
+                try:
+                        if isinstance(next_q, list):
+                            line_bot_api.push_message(user_id, next_q)
+                        else:
+                            line_bot_api.push_message(user_id, [next_q])
+                        logger.info(f"成功發送下一題給用戶 {user_id}")
+                except Exception as e:
+                    logger.error(f"發送下一題失敗: {str(e)}")
         return
     
     # 一般發音練習模式 (非考試模式)
@@ -1773,7 +1777,7 @@ def handle_exam_message(event):
     # 正在考試狀態中（處理作答）
     if user_id in exam_sessions:
        session = exam_sessions[user_id]
-    question = session["questions"][session["current"]]
+       question = session["questions"][session["current"]]
     
     # 判斷答題類型
     if question["type"] == "audio_choice":
@@ -1830,50 +1834,77 @@ def handle_exam_message(event):
     return None
 
 def send_exam_question(user_id):
-    session = exam_sessions[user_id]
-    question = session["questions"][session["current"]]
-    q_num = session["current"] + 1
-    total = len(session["questions"])
+    # 檢查用戶是否在考試狀態
+    if user_id not in exam_sessions:
+        logger.error(f"用戶 {user_id} 不在考試狀態中，無法發送題目")
+        return TextSendMessage(text="考試狀態錯誤，請重新開始考試。")
+    
+    try:
+        # 獲取考試狀態
+        session = exam_sessions[user_id]
+        
+        # 檢查session是否包含必要的信息
+        if "questions" not in session or "current" not in session:
+            logger.error(f"考試狀態不完整: {session}")
+            return TextSendMessage(text="考試狀態不完整，請重新開始考試。")
+        
+        # 檢查索引是否有效
+        if session["current"] >= len(session["questions"]):
+            logger.error(f"題目索引超出範圍: {session['current']}/{len(session['questions'])}")
+            return TextSendMessage(text="已完成所有題目，考試結束。")
+        
+        # 從這裡開始是原有代碼
+        question = session["questions"][session["current"]]
+        q_num = session["current"] + 1
+        total = len(session["questions"])
 
-    # 添加「跳過」按鈕
-    skip_button = QuickReplyButton(action=MessageAction(label="跳過此題", text="跳過"))
+        # 添加「跳過」按鈕
+        skip_button = QuickReplyButton(action=MessageAction(label="跳過此題", text="跳過"))
 
-    if question["type"] == "pronounce":
-        return [
-            TextSendMessage(text=f"第 {q_num}/{total} 題：請看到圖片後唸出對應泰文"),
-            ImageSendMessage(
-                original_content_url=question["image_url"], 
-                preview_image_url=question["image_url"]
-            ),
+        if question["type"] == "pronounce":
+            return [
+                TextSendMessage(text=f"第 {q_num}/{total} 題：請看到圖片後唸出對應泰文"),
+                ImageSendMessage(
+                    original_content_url=question["image_url"], 
+                    preview_image_url=question["image_url"]
+                ),
+                # 添加跳過按鈕
+                TextSendMessage(
+                    text="若要跳過此題，請點擊「跳過此題」", 
+                    quick_reply=QuickReply(items=[skip_button])
+                )
+            ]
+
+        elif question["type"] == "audio_choice":
+            audio_url = question["audio_url"]
+            options = question["choices"]
+
+            quick_reply_items = [
+                QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"]))
+                for opt in options
+            ]
             # 添加跳過按鈕
-            TextSendMessage(
-                text="若要跳過此題，請點擊「跳過此題」", 
-                quick_reply=QuickReply(items=[skip_button])
-            )
-        ]
+            quick_reply_items.append(skip_button)
 
-    elif question["type"] == "audio_choice":
-        audio_url = question["audio_url"]
-        options = question["choices"]
-
-        quick_reply_items = [
-            QuickReplyButton(action=MessageAction(label=opt["word"], text=opt["word"]))
-            for opt in options
-        ]
-        # 添加跳過按鈕
-        quick_reply_items.append(skip_button)
-
-        return [
-            TextSendMessage(text=f"第 {q_num}/{total} 題：請聽音檔後從以下選項選出正確答案"),
-            AudioSendMessage(
-                original_content_url=audio_url,
-                duration=3000
-            ),
-            TextSendMessage(
-                text="請選擇:", 
-                quick_reply=QuickReply(items=quick_reply_items)
-            )
-        ]
+            return [
+                TextSendMessage(text=f"第 {q_num}/{total} 題：請聽音檔後從以下選項選出正確答案"),
+                AudioSendMessage(
+                    original_content_url=audio_url,
+                    duration=3000
+                ),
+                TextSendMessage(
+                    text="請選擇:", 
+                    quick_reply=QuickReply(items=quick_reply_items)
+                )
+            ]
+        else:
+            logger.error(f"未知的題型: {question['type']}")
+            return TextSendMessage(text="題型錯誤，請跳過此題")
+            
+    except Exception as e:
+        # 捕獲任何可能發生的錯誤
+        logger.error(f"生成考試題目時發生錯誤: {str(e)}")
+        return TextSendMessage(text="生成題目時發生錯誤，請重新開始考試。")
 #=== 考試結果儲存 ===    
 def save_exam_result(user_id, score, total, exam_type="綜合考試"):
     ref = db.collection("users").document(user_id).collection("exams").document()
