@@ -885,7 +885,7 @@ def generate_exam(thai_data, category=None):
     # 題目格式化
     questions = []
     for i, (key, item) in enumerate(selected_items):
-        if i < 3:
+        if i < 2:
             q_type = "pronounce"
             questions.append({
                 "type": q_type,
