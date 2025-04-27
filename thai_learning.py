@@ -1111,14 +1111,15 @@ def handle_audio_message(event):
     # 考試模式處理
     if user_id in exam_sessions:
         logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
-        # ✅ 回覆「評分中」提示
-    try:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="✅ 收到語音，評分中...")
-        )
-    except Exception as e:
-        logger.warning(f"⚠️ 回覆評分中訊息失敗: {str(e)}")
+        # 先回覆「評分中」提示
+        try:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="✅ 收到語音，評分中...")
+            )
+        except Exception as e:
+            logger.warning(f"⚠️ 回覆評分中訊息失敗: {str(e)}")
+            
         session = exam_sessions[user_id]
         current_q = session["questions"][session["current"]]
         total = len(session["questions"])
@@ -1128,8 +1129,8 @@ def handle_audio_message(event):
 
             if not audio_file_path or not os.path.exists(audio_file_path):
                 # 如果找不到音檔，提供跳過選項
-                line_bot_api.reply_message(
-                    event.reply_token, 
+                line_bot_api.push_message(
+                    user_id, 
                     [
                         TextSendMessage(text="❌ 找不到音訊檔案，請再試一次"),
                         TextSendMessage(
@@ -1146,6 +1147,7 @@ def handle_audio_message(event):
             is_correct = False
             method = "模擬評估"
             feedback_text = ""
+            score = 70  # 預設分數
 
             try:
                 # ==== Step 1: Google Speech-to-Text ====
@@ -1183,7 +1185,7 @@ def handle_audio_message(event):
                             elif similarity >= 0.4:
                                 feedback_text = f"✅ 進階級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
                             else:
-                                feedback_text = f"✅s 基礎級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                                feedback_text = f"✅ 基礎級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
                             score = enhanced_score
                             logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")    
                 
@@ -1239,6 +1241,7 @@ def handle_audio_message(event):
                             is_correct = similarity_score >= 0.5
                             method = "SpeechBrain"
                             feedback_text = f"✅ 發音相似度為 {similarity_score:.2f}，{'通過' if is_correct else '需要再加強'}！"
+                            score = int(similarity_score * 100)
                             logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
                         else:
                             raise ValueError("參考音頻檔案為空")
@@ -1267,6 +1270,7 @@ def handle_audio_message(event):
                     is_correct = simulated_score >= 70
                     method = "AI 評估"
                     feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
+                    score = simulated_score
                     logger.info(f"模擬分數: {simulated_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
 
             finally:
@@ -1279,43 +1283,39 @@ def handle_audio_message(event):
             if is_correct:
                 session["correct"] += 1
 
-            # ✅ 改這裡：統一根據模式簡化 feedback_text
-            if user_id in exam_sessions:
-                feedback_text = f"📝 發音評分：{score}/100"
-                feedback = TextSendMessage(
-                    text=feedback_text
-    )
-            else:
-                if is_correct:
-                    feedback_text = f"✅ 發音很接近標準！（分數：{score}/100）"
-                else:
-                    feedback_text = f"❌ 需要再加強。（分數：{score}/100）"
+            # 發送評分反饋
             feedback = TextSendMessage(
-                text=feedback_text +
-                "\n📘 此為 AI 評估，請持續練習，發音會越來越好喔！"
-    )
+                text=f"📝 發音評分：{score}/100\n📘 此為 AI 評估，請持續練習，發音會越來越好喔！"
+            )
+            line_bot_api.push_message(user_id, feedback)
+            
+            # 更新題目計數
             session["current"] += 1
+            
+            # 檢查是否考試結束
             if session["current"] >= len(session["questions"]):
                 final_score = session["correct"]
                 total = len(session["questions"])
+                
+                # 清理考試狀態
                 del exam_sessions[user_id]
+                
+                # 發送考試結果
                 summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
-                line_bot_api.push_message(user_id, [feedback, summary])  # 使用 push_message
-    else:
-        # 先發送評分反饋
-        line_bot_api.push_message(user_id, feedback)
-    
-        # 短暫延遲後發送下一題
-        import time
-        time.sleep(0.5)  # 延遲0.5秒
-    
-        # 獲取並發送下一題
-        next_q = send_exam_question(user_id)
-        if isinstance(next_q, (list, tuple)):
-            line_bot_api.push_message(user_id, next_q)
-        else:
-            line_bot_api.push_message(user_id, [next_q])
-    return
+                line_bot_api.push_message(user_id, summary)
+            else:
+                # 短暫延遲後發送下一題
+                import time
+                time.sleep(0.5)  # 延遲0.5秒
+                
+                # 獲取並發送下一題
+                next_q = send_exam_question(user_id)
+                if isinstance(next_q, list):
+                    line_bot_api.push_message(user_id, next_q)
+                else:
+                    line_bot_api.push_message(user_id, [next_q])
+        
+        return
     
     # 一般發音練習模式 (非考試模式)
     try:
@@ -1387,6 +1387,7 @@ def handle_audio_message(event):
                     logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")
                 else:
                     raise ValueError("無法辨識語音內容")
+                    
         except Exception as e1:
             logger.warning(f"Step 1 失敗，嘗試 Step 2: {str(e1)}")
             
@@ -1439,6 +1440,7 @@ def handle_audio_message(event):
                         raise ValueError(f"無法下載參考音頻，狀態碼: {response.status_code}")
                 else:
                     raise ValueError("無法找到參考音頻URL")
+                    
             except Exception as e2:
                 # 取消超時（如果有設置）
                 try:
@@ -1502,8 +1504,7 @@ def handle_audio_message(event):
             template=buttons_template
         ))
         
-        line_bot_api.push_message(user_id, response_messages)
-
+        line_bot_api.reply_message(event.reply_token, response_messages)
         
     except Exception as e:
         logger.error(f"處理音頻評估時發生錯誤: {str(e)}", exc_info=True)
