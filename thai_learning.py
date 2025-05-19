@@ -310,200 +310,203 @@ user_data_manager = UserData()
 thai_data = {
     'categories': {
         'daily_phrases': {
-            'name': '日常用語',
-            'words': ['你好', '謝謝', '再見', '對不起', '早安', '晚安', '不客氣', '怎麼走？', '多少錢', '好吃']
+            'name': 'Daily Phrases',
+            'words': ['Hello', 'Thank You', 'Goodbye', 'Sorry', 'Good Morning',
+                'Good Night', "You're Welcome", 'How to Get There?', 'How Much?', 'Delicious']
         },
         'numbers': {
-            'name': '數字',
-            'words': ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+            'name': 'Numbers',
+            'words': ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten']
         },
         'animals': {
-            'name': '動物',
-            'words': ['貓', '狗', '鳥', '魚', '大象', '老虎', '猴子', '雞', '豬', '牛']
+            'name': 'Animals',
+            'words': ['Cat', 'Dog', 'Bird', 'Fish', 'Elephant', 'Tiger', 'Monkey', 'Chicken', 'Pig', 'Cow']
         },
         'food': {
-            'name': '食物',
-            'words': ['米飯', '粿條', '啤酒', '麵包', '雞翅', '芒果糯米飯', '炒飯', '青木瓜沙拉', '冬蔭功湯', '泰式炒河粉']
+            'name': 'Food',
+            'words': [ 'Rice', 'Noodles', 'Beer', 'Bread', 'Chicken Wings', 'Mango Sticky Rice',
+                'Fried Rice', 'Papaya Salad', 'Tom Yum Soup', 'Pad Thai']
         },
         'transportation': {
-            'name': '交通工具',
-            'words': ['車子', '公車', '計程車', '摩托車', '火車', '飛機', '船', '腳踏車', '嘟嘟車', '貨車']
+            'name': 'Transportation',
+            'words': [ 'Car', 'Bus', 'Taxi', 'Motorbike', 'Train', 'Airplane',
+                'Boat', 'Bicycle', 'Tuk Tuk', 'Truck']
         }
     },
     'basic_words': {
         # 日常用語
-        '你好': {'thai': 'สวัสดี', 'pronunciation': 'sa-wat-dee', 'tone': 'mid-falling-mid',
+        'Hello': {'thai': 'สวัสดี', 'pronunciation': 'sa-wat-dee', 'tone': 'mid-falling-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E4%BD%A0%E5%A5%BD.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/Hello.jpg'},
-        '謝謝': {'thai': 'ขอบคุณ', 'pronunciation': 'khop-khun', 'tone': 'low-mid',
+        'Thank You': {'thai': 'ขอบคุณ', 'pronunciation': 'khop-khun', 'tone': 'low-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E8%AC%9D%E8%AC%9D.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/thank.jpg'},
-        '再見': {'thai': 'ลาก่อน', 'pronunciation': 'la-kon', 'tone': 'mid-mid',
+        'Goodbye': {'thai': 'ลาก่อน', 'pronunciation': 'la-kon', 'tone': 'mid-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E5%86%8D%E8%A6%8B.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/bye.jpg'},
-        '對不起': {'thai': 'ขอโทษ', 'pronunciation': 'kho-thot', 'tone': 'low-low',
+        'Sorry': {'thai': 'ขอโทษ', 'pronunciation': 'kho-thot', 'tone': 'low-low',
                 'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E5%B0%8D%E4%B8%8D%E8%B5%B7.mp3',
                 'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/sorry.jpg'},
-        '早安': {'thai': 'อรุณสวัสดิ์', 'pronunciation': 'a-run-sa-wat', 'tone': 'mid-mid-falling-mid',
+        'Good Morning': {'thai': 'อรุณสวัสดิ์', 'pronunciation': 'a-run-sa-wat', 'tone': 'mid-mid-falling-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E6%97%A9%E5%AE%89.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/morning.jpg'},
-        '晚安': {'thai': 'ราตรีสวัสดิ์', 'pronunciation': 'ra-tree-sa-wat', 'tone': 'mid-mid-falling-mid',
+        'Good Night': {'thai': 'ราตรีสวัสดิ์', 'pronunciation': 'ra-tree-sa-wat', 'tone': 'mid-mid-falling-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E6%99%9A%E5%AE%89.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/night.jpg'},
-        '不客氣': {'thai': 'ไม่เป็นไร', 'pronunciation': 'mai-pen-rai', 'tone': 'mid-mid-mid',
+        'You are Welcome': {'thai': 'ไม่เป็นไร', 'pronunciation': 'mai-pen-rai', 'tone': 'mid-mid-mid',
                 'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E4%B8%8D%E5%AE%A2%E6%B0%A3.mp3',
                 'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/welcome.jpg'},
-        '怎麼走？': {'thai': 'ไปทางไหน', 'pronunciation': 'pai-tang-nai', 'tone': 'mid-mid-mid',
+        'How to Get There？': {'thai': 'ไปทางไหน', 'pronunciation': 'pai-tang-nai', 'tone': 'mid-mid-mid',
                 'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E6%80%8E%E9%BA%BC%E8%B5%B0.mp3',
                 'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/how%20can%20i%20go%20to.jpg'},
-        '多少錢': {'thai': 'เท่าไหร่', 'pronunciation': 'tao-rai', 'tone': 'mid-mid',
+        'How Much?': {'thai': 'เท่าไหร่', 'pronunciation': 'tao-rai', 'tone': 'mid-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E5%A4%9A%E5%B0%91%E9%8C%A2.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/askprice.jpg'},
-        '好吃': {'thai': 'อร่อย', 'pronunciation': 'a-roi', 'tone': 'mid-mid',
+        'Delicious': {'thai': 'อร่อย', 'pronunciation': 'a-roi', 'tone': 'mid-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E5%A5%BD%E5%90%83.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/yummy.jpg'},
         
         # 數字
-        '一': {'thai': 'หนึ่ง', 'pronunciation': 'neung', 'tone': 'mid',
+        'One': {'thai': 'หนึ่ง', 'pronunciation': 'neung', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/1.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/1.png'},
-        '二': {'thai': 'สอง', 'pronunciation': 'song', 'tone': 'mid',
+        'Two': {'thai': 'สอง', 'pronunciation': 'song', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/2.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/2.jpg'},
-        '三': {'thai': 'สาม', 'pronunciation': 'sam', 'tone': 'mid',
+        'Three': {'thai': 'สาม', 'pronunciation': 'sam', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/3.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/3.jpg'},
-        '四': {'thai': 'สี่', 'pronunciation': 'see', 'tone': 'mid',
+        'Four': {'thai': 'สี่', 'pronunciation': 'see', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/4.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/4.jpg'},
-        '五': {'thai': 'ห้า', 'pronunciation': 'ha', 'tone': 'falling',
+        'Five': {'thai': 'ห้า', 'pronunciation': 'ha', 'tone': 'falling',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/5.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/5.jpg'},
-        '六': {'thai': 'หก', 'pronunciation': 'hok', 'tone': 'low',
+        'Six': {'thai': 'หก', 'pronunciation': 'hok', 'tone': 'low',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/6.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/6.jpg'},
-        '七': {'thai': 'เจ็ด', 'pronunciation': 'jet', 'tone': 'falling',
+        'Seven': {'thai': 'เจ็ด', 'pronunciation': 'jet', 'tone': 'falling',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/7.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/7.jpg'},
-        '八': {'thai': 'แปด', 'pronunciation': 'paet', 'tone': 'falling',
+        'Eight': {'thai': 'แปด', 'pronunciation': 'paet', 'tone': 'falling',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/8.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/8.jpg'},
-        '九': {'thai': 'เก้า', 'pronunciation': 'kao', 'tone': 'falling',
+        'Nine': {'thai': 'เก้า', 'pronunciation': 'kao', 'tone': 'falling',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/9.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/9.jpg'},
-        '十': {'thai': 'สิบ', 'pronunciation': 'sip', 'tone': 'low',
+        'Ten': {'thai': 'สิบ', 'pronunciation': 'sip', 'tone': 'low',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%95%B8%E5%AD%97/10.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E6%95%B8%E5%AD%97/10.jpg'},
         
         # 動物
-        '貓': {'thai': 'แมว', 'pronunciation': 'maew', 'tone': 'mid',
+        'Cat': {'thai': 'แมว', 'pronunciation': 'maew', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E8%B2%93.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E8%B2%93.jpg'},
-        '狗': {'thai': 'หมา', 'pronunciation': 'ma', 'tone': 'mid',
+        'Dog': {'thai': 'หมา', 'pronunciation': 'ma', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E7%8B%97.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E7%8B%97.jpg'},
-        '鳥': {'thai': 'นก', 'pronunciation': 'nok', 'tone': 'low',
+        'Bird': {'thai': 'นก', 'pronunciation': 'nok', 'tone': 'low',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E9%B3%A5.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E9%B3%A5.jpg'},
-        '魚': {'thai': 'ปลา', 'pronunciation': 'pla', 'tone': 'mid',
+        'Fish': {'thai': 'ปลา', 'pronunciation': 'pla', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E9%AD%9A.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E9%AD%9A.jpg'},
-        '大象': {'thai': 'ช้าง', 'pronunciation': 'chang', 'tone': 'high',
+        'Elephant': {'thai': 'ช้าง', 'pronunciation': 'chang', 'tone': 'high',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E5%A4%A7%E8%B1%A1.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E5%A4%A7%E8%B1%A1.jpg'},
-        '老虎': {'thai': 'เสือ', 'pronunciation': 'suea', 'tone': 'low',
+        'Tiger': {'thai': 'เสือ', 'pronunciation': 'suea', 'tone': 'low',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E8%80%81%E8%99%8E.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E8%80%81%E8%99%8E.jpg'},
-        '猴子': {'thai': 'ลิง', 'pronunciation': 'ling', 'tone': 'mid',
+        'Monkey': {'thai': 'ลิง', 'pronunciation': 'ling', 'tone': 'mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E7%8C%B4%E5%AD%90.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E7%8C%B4.jpg'},
-        '雞': {'thai': 'ไก่', 'pronunciation': 'kai', 'tone': 'low',
+        'Chicken': {'thai': 'ไก่', 'pronunciation': 'kai', 'tone': 'low',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E9%9B%9E.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E9%9B%9E.jpg'},
-        '豬': {'thai': 'หมู', 'pronunciation': 'moo', 'tone': 'mid',
+        'Pig': {'thai': 'หมู', 'pronunciation': 'moo', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E8%B1%AC.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E8%B1%AC.jpg'},
-        '牛': {'thai': 'วัว', 'pronunciation': 'wua', 'tone': 'mid',
+        'Cow': {'thai': 'วัว', 'pronunciation': 'wua', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E5%8B%95%E7%89%A9/%E7%89%9B.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E5%8B%95%E7%89%A9/%E7%89%9B.jpg'},
         
         # 食物
-        '米飯': {'thai': 'ข้าว', 'pronunciation': 'khao', 'tone': 'falling',
+        'Rice': {'thai': 'ข้าว', 'pronunciation': 'khao', 'tone': 'falling',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E7%B1%B3%E9%A3%AF.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/rice.jpg'},
-        '粿條': {'thai': 'ก๋วยเตี๋ยว', 'pronunciation': 'guay-tiew', 'tone': 'falling-falling-low',
+        'Noodles': {'thai': 'ก๋วยเตี๋ยว', 'pronunciation': 'guay-tiew', 'tone': 'falling-falling-low',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E7%B2%BF%E6%A2%9D.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/%E7%B2%BF%E6%A2%9D.jpg'},
-        '啤酒': {'thai': 'เบียร์', 'pronunciation': 'bia', 'tone': 'mid',
+        'Beer': {'thai': 'เบียร์', 'pronunciation': 'bia', 'tone': 'mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E5%95%A4%E9%85%92.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/beer.jpg'},
-        '麵包': {'thai': 'ขนมปัง', 'pronunciation': 'kha-nom-pang', 'tone': 'mid-mid-mid',
+        'Bread': {'thai': 'ขนมปัง', 'pronunciation': 'kha-nom-pang', 'tone': 'mid-mid-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E9%BA%B5%E5%8C%85.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/bread.jpg'},
-        '雞翅': {'thai': 'ปีกไก่', 'pronunciation': 'peek-kai', 'tone': 'falling-low',
+        'Chicken Wings': {'thai': 'ปีกไก่', 'pronunciation': 'peek-kai', 'tone': 'falling-low',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E9%9B%9E%E7%BF%85.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/chicken%20wing.jpg'},
-        '芒果糯米飯': {'thai': 'ข้าวเหนียวมะม่วง', 'pronunciation': 'khao-niew-ma-muang', 'tone': 'falling-falling-mid-mid',
+        'Mango Sticky Rice': {'thai': 'ข้าวเหนียวมะม่วง', 'pronunciation': 'khao-niew-ma-muang', 'tone': 'falling-falling-mid-mid',
                  'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E8%8A%92%E6%9E%9C%E7%B3%AF%E7%B1%B3%E9%A3%AF.mp3',
                  'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/mango%20sticky%20rice.jpg'},
-        '炒飯': {'thai': 'ข้าวผัด', 'pronunciation': 'khao-pad', 'tone': 'falling-low',
+        'Fried Rice': {'thai': 'ข้าวผัด', 'pronunciation': 'khao-pad', 'tone': 'falling-low',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E7%82%92%E9%A3%AF.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/fried%20rice.jpg'},
-        '青木瓜沙拉': {'thai': 'ส้มตำ', 'pronunciation': 'som-tam', 'tone': 'falling-mid',
+        'Papaya Salad': {'thai': 'ส้มตำ', 'pronunciation': 'som-tam', 'tone': 'falling-mid',
                   'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E9%9D%92%E6%9C%A8%E7%93%9C%E6%B2%99%E6%8B%89.mp3',
                   'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/papaya-salad.jpg'},
-        '冬蔭功湯': {'thai': 'ต้มยำกุ้ง', 'pronunciation': 'tom-yum-kung', 'tone': 'high-mid-mid',
+        'Tom Yum Soup': {'thai': 'ต้มยำกุ้ง', 'pronunciation': 'tom-yum-kung', 'tone': 'high-mid-mid',
                  'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E5%86%AC%E8%94%AD%E5%8A%9F%E6%B9%AF.mp3',
                  'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/tom%20yam%20kung.jpg'},
-        '泰式炒河粉': {'thai': 'ผัดไทย', 'pronunciation': 'pad-thai', 'tone': 'low-mid',
+        'Pad Thai': {'thai': 'ผัดไทย', 'pronunciation': 'pad-thai', 'tone': 'low-mid',
                   'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E9%A3%9F%E7%89%A9/%E6%B3%B0%E5%BC%8F%E7%82%92%E6%B2%B3%E7%B2%89.mp3',
                   'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%A3%9F%E7%89%A9/pad%20tai.jpg'},
         
         # 交通工具
-        '車子': {'thai': 'รถยนต์', 'pronunciation': 'rot-yon', 'tone': 'high-mid',
+        'Car': {'thai': 'รถยนต์', 'pronunciation': 'rot-yon', 'tone': 'high-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%BB%8A%E5%AD%90.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E6%B1%BD%E8%BB%8A.jpg'},
-        '公車': {'thai': 'รถเมล์', 'pronunciation': 'rot-mae', 'tone': 'high-mid',
+        'Bus': {'thai': 'รถเมล์', 'pronunciation': 'rot-mae', 'tone': 'high-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E5%85%AC%E8%BB%8A.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E5%85%AC%E8%BB%8A.jpg'},
-        '計程車': {'thai': 'แท็กซี่', 'pronunciation': 'taxi', 'tone': 'mid-mid',
+        'Taxi': {'thai': 'แท็กซี่', 'pronunciation': 'taxi', 'tone': 'mid-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%A8%88%E7%A8%8B%E8%BB%8A.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%A8%88%E7%A8%8B%E8%BB%8A.jpg'},
-        '摩托車': {'thai': 'มอเตอร์ไซค์', 'pronunciation': 'motor-sai', 'tone': 'mid-mid-mid',
+        'Motorbike': {'thai': 'มอเตอร์ไซค์', 'pronunciation': 'motor-sai', 'tone': 'mid-mid-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E6%91%A9%E6%89%98%E8%BB%8A.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E6%91%A9%E6%89%98%E8%BB%8A.jpg'},
-        '火車': {'thai': 'รถไฟ', 'pronunciation': 'rot-fai', 'tone': 'high-mid',
+        'Train': {'thai': 'รถไฟ', 'pronunciation': 'rot-fai', 'tone': 'high-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E7%81%AB%E8%BB%8A.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E7%81%AB%E8%BB%8A.jpg'},
-        '飛機': {'thai': 'เครื่องบิน', 'pronunciation': 'krueang-bin', 'tone': 'falling-mid',
+        'Airplane': {'thai': 'เครื่องบิน', 'pronunciation': 'krueang-bin', 'tone': 'falling-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E9%A3%9B%E6%A9%9F.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E9%A3%9B%E6%A9%9F.jpg'},
-        '船': {'thai': 'เรือ', 'pronunciation': 'ruea', 'tone': 'mid',
+        'Boat': {'thai': 'เรือ', 'pronunciation': 'ruea', 'tone': 'mid',
              'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%88%B9.mp3',
              'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%88%B9.jpg'},
-        '腳踏車': {'thai': 'จักรยาน', 'pronunciation': 'jak-ka-yan', 'tone': 'low-low-mid',
+        'Bicycle': {'thai': 'จักรยาน', 'pronunciation': 'jak-ka-yan', 'tone': 'low-low-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%85%B3%E8%B8%8F%E8%BB%8A.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%85%B3%E8%B8%8F%E8%BB%8A.jpg'},
-        '嘟嘟車': {'thai': 'ตุ๊กตุ๊ก', 'pronunciation': 'tuk-tuk', 'tone': 'high-high',
+        'Tuk Tuk': {'thai': 'ตุ๊กตุ๊ก', 'pronunciation': 'tuk-tuk', 'tone': 'high-high',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E5%98%9F%E5%98%9F%E8%BB%8A.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E5%98%9F%E5%98%9F%E8%BB%8A.jpg'},
-        '貨車': {'thai': 'รถบรรทุก', 'pronunciation': 'rot-ban-tuk', 'tone': 'high-mid-low',
+        'Truck': {'thai': 'รถบรรทุก', 'pronunciation': 'rot-ban-tuk', 'tone': 'high-mid-low',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E4%BA%A4%E9%80%9A%E5%B7%A5%E5%85%B7/%E8%B2%A8%E8%BB%8A.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E5%9C%96%E7%89%87%E9%81%8B%E8%BC%B8%E5%B7%A5%E5%85%B7/%E8%B2%A8%E8%BB%8A.jpg'}
     },
     'tone_guide': {
-        'mid': '中調 - 平穩音調',
-        'low': '低調 - 以較低音高發音',
-        'falling': '降調 - 音調從高降到低',
-        'high': '高調 - 以較高音高發音',
-        'rising': '升調 - 音調從低升到高'
+        'mid': 'Mid Tone – A stable, even tone',
+        'low': 'Low Tone – Pronounced with a lower pitch',
+        'falling': 'Falling Tone – Starts high and drops',
+        'high': 'High Tone – Pronounced with a higher pitch',
+        'rising': 'Rising Tone – Starts low and rises'
     },
     'tone_examples': [
-        {'thai': 'คา', 'meaning': '卡', 'tone': 'mid', 'pronunciation': 'ka (平穩音)'},
-        {'thai': 'ค่า', 'meaning': '價值', 'tone': 'low', 'pronunciation': 'kà (低音)'},
-        {'thai': 'ค้า', 'meaning': '貿易', 'tone': 'falling', 'pronunciation': 'kâ (從高到低)'},
-        {'thai': 'ค๊า', 'meaning': '(語氣詞)', 'tone': 'high', 'pronunciation': 'ká (高音)'},
-        {'thai': 'ค๋า', 'meaning': '(無特定含義)', 'tone': 'rising', 'pronunciation': 'kǎ (從低到高)'}
+        {'thai': 'คา', 'meaning': 'stick', 'tone': 'mid', 'pronunciation': 'ka (stable tone)'},
+        {'thai': 'ค่า', 'meaning': 'Value', 'tone': 'low', 'pronunciation': 'kà (low tone)'},
+        {'thai': 'ค้า', 'meaning': 'Trade', 'tone': 'falling', 'pronunciation': 'kâ (falling tone)'},
+        {'thai': 'ค๊า', 'meaning': '(Polite particle)', 'tone': 'high', 'pronunciation': 'ká (high tone)'},
+        {'thai': 'ค๋า', 'meaning': '(No specific meaning)', 'tone': 'rising', 'pronunciation': 'kǎ (rising tone)'}
     ],
     'daily_lessons': [
         {
@@ -673,11 +676,11 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
         pronunciation_assessment = pronunciation_config.apply_to(speech_recognizer)
         
         # 開始識別
-        logger.info("開始識別語音...")
+        logger.info("Starting speech recognition...")
         result = speech_recognizer.recognize_once_async().get()
         
         if error_details:
-            logger.error(f"詳細錯誤信息: {error_details}")
+            logger.error(f"Error details: {error_details}")
         
         # 處理結果
         if result.reason == speechsdk.ResultReason.RecognizedSpeech:
@@ -692,7 +695,7 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
             # 計算總分
             overall_score = int((accuracy_score + pronunciation_score + completeness_score + fluency_score) / 4)
             
-            logger.info(f"發音評估完成，總分: {overall_score}, 識別文字: {result.text}")
+            logger.info(f"Pronunciation evaluation completed. Score: {overall_score}, Recognized text: {result.text}")
             return {
                 "success": True,
                 "recognized_text": result.text,
@@ -720,22 +723,22 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
                     else:
                         detail_info = f"取消原因: {cancellation_reason}"
                 
-                logger.warning(f"語音識別失敗，原因: {result.reason}, 詳細資訊: {detail_info or '無詳細資訊'}")
+                logger.warning(f"Speech recognition failed. Reason: {result.reason}, Details: {detail_info or 'No additional information'}")
                 
                 # 鑑於 Azure 似乎不支援泰語的發音評估，使用模擬評估
                 logger.info("切換到模擬評估模式")
                 return simulate_pronunciation_assessment(audio_file_path, reference_text)
             
             except Exception as e:
-                logger.error(f"錯誤處理過程中發生異常: {str(e)}", exc_info=True)
+                logger.error(f"An exception occurred during error handling: {str(e)}", exc_info=True)
                 # 出現例外時依然使用模擬評估
-                logger.info("因錯誤處理異常切換到模擬評估模式")
+                logger.info("Switched to simulated assessment mode due to error handling exception")
                 return simulate_pronunciation_assessment(audio_file_path, reference_text)
     
     except Exception as e:
-        logger.error(f"發音評估過程中發生錯誤: {str(e)}", exc_info=True)
+        logger.error(f"An error occurred during pronunciation evaluation: {str(e)}", exc_info=True)
         # 發生錯誤時也使用模擬評估
-        logger.info("因發音評估錯誤切換到模擬評估模式")
+        logger.info("Switched to simulated assessment mode due to evaluation error")
         return simulate_pronunciation_assessment(audio_file_path, reference_text)
        
     finally:
@@ -793,11 +796,11 @@ def speech_to_text_google(audio_file_path):
             return None
             
         transcript = response.results[0].alternatives[0].transcript
-        logger.info(f"識別文字: {transcript}")
+        logger.info(f"Recognized text: {transcript}")
         return transcript
         
     except Exception as e:
-        logger.error(f"轉換音頻為文字時發生錯誤: {str(e)}", exc_info=True)
+        logger.error(f"An error occurred while converting audio to text: {str(e)}", exc_info=True)
         return None
 
 def evaluate_pronunciation_google(public_url, reference_text):
@@ -818,7 +821,7 @@ def evaluate_pronunciation_google(public_url, reference_text):
         response = client.recognize(config=config, audio=audio)
 
         if not response.results:
-            return {"success": False, "error": "無法辨識語音"}
+            return {"success": False, "error": "Unable to recognize speech"}
 
         top_result = response.results[0].alternatives[0]
         recognized_text = top_result.transcript
@@ -840,7 +843,7 @@ def evaluate_pronunciation_google(public_url, reference_text):
         }
 
     except Exception as e:
-        logger.error(f"[Google STT 評分錯誤] {str(e)}")
+        logger.error(f"[Google STT Scoring Error] {str(e)}")
         return {"success": False, "error": str(e)}
     
     
@@ -864,7 +867,7 @@ def transcribe_audio_google(gcs_url):
     response = client.recognize(config=config, audio=audio)
 
     if not response.results:
-        raise ValueError("無法辨識語音")
+        raise ValueError("Unable to recognize speech")
 
     return response.results[0].alternatives[0].transcript
 
@@ -1032,7 +1035,7 @@ def get_audio_content_with_gcs(message_id, user_id):
         pronunciation_assessment = pronunciation_config.apply_to(speech_recognizer)
         
         # 開始識別
-        logger.info("開始識別語音...")
+        logger.info("Starting speech recognition...")
         result = speech_recognizer.recognize_once_async().get()
         
         # 處理結果
@@ -1048,7 +1051,7 @@ def get_audio_content_with_gcs(message_id, user_id):
             # 計算總分
             overall_score = int((accuracy_score + pronunciation_score + completeness_score + fluency_score) / 4)
             
-            logger.info(f"發音評估完成，總分: {overall_score}, 識別文字: {result.text}")
+            logger.info(f"Pronunciation assessment completed. Score: {overall_score}, Recognized text: {result.text}")
             return {
                 "success": True,
                 "recognized_text": result.text,
@@ -1060,16 +1063,16 @@ def get_audio_content_with_gcs(message_id, user_id):
                 "fluency_score": fluency_score
             }
         else:
-            logger.warning(f"語音識別失敗，原因: {result.reason}, 詳細資訊: {result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'}")
+            logger.warning(f"Speech recognition failed. Reason: {result.reason}, Details: {result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'}")
             return {
                 "success": False,
-                "error": f"無法識別語音，原因: {result.reason}",
+                "error": f"Unable to recognize speech. Reason: {result.reason}",
                 "result_reason": result.reason,
                 "details": result.cancellation_details.reason if hasattr(result, 'cancellation_details') else 'None'
             }
     
     except Exception as e:
-        logger.error(f"發音評估過程中發生錯誤: {str(e)}", exc_info=True)
+        logger.error(f"An error occurred during pronunciation evaluation: {str(e)}", exc_info=True)
         return {
             "success": False,
             "error": str(e)
@@ -1084,19 +1087,19 @@ def get_audio_content_with_gcs(message_id, user_id):
             #     logger.info(f"已清除臨時檔案 {audio_file_path}")
             pass
         except Exception as e:
-            logger.warning(f"清除臨時檔案失敗: {str(e)}")
+            logger.warning(f"Failed to delete temporary file: {str(e)}")
             pass
 from linebot.models import FollowEvent
 
 @handler.add(FollowEvent)
 def handle_follow(event):
     welcome_text = (
-        "👋 歡迎使用【泰語學習機器人】！\n\n"
-        "你可以輸入以下指令來開始學習：\n"
-        "🗣 開始學習：進行泰語學習（回音法,圖像法......）\n"
-        "🎓 考試模式：選擇主題進行 10 題測驗\n"
-        "🔁 跳過：考試中略過當前題目\n\n"
-        "現在就輸入「開始學習」試試看吧！📘"
+         "👋 Welcome to the Thai Learning Chatbot!\n\n"
+        "You can use the following commands to begin:\n"
+        "🗣 Start Learning: Practice Thai with Echo and Image methods\n"
+        "🎓 Exam Mode: Test your knowledge with 10 questions\n"
+        "🔁 Skip: Skip the current question during the test\n\n"
+        "Type 'Start Learning' to try it now! 📘"
     )
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=welcome_text))
 
@@ -1106,19 +1109,19 @@ def handle_audio_message(event):
     user_id = event.source.user_id
     user_data = user_data_manager.get_user_data(user_id)
 
-    logger.info(f"收到用戶 {user_id} 的音頻訊息")
+    logger.info(f"Received audio message from user{user_id} ")
     
     # 考試模式處理
     if user_id in exam_sessions:
-        logger.info(f"用戶 {user_id} 在考試模式中，進行語音題處理")
+        logger.info(f"User {user_id} is in exam mode. Processing voice question.")
         # 先回覆「評分中」提示
         try:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="✅ 收到語音，評分中...")
+                TextSendMessage(text="✅ Audio received. Evaluating...")
             )
         except Exception as e:
-            logger.warning(f"⚠️ 回覆評分中訊息失敗: {str(e)}")
+            logger.warning(f"⚠️ Failed to reply with evaluation message: {str(e)}")
             
         session = exam_sessions[user_id]
         current_q = session["questions"][session["current"]]
@@ -1132,11 +1135,11 @@ def handle_audio_message(event):
                 line_bot_api.push_message(
                     user_id, 
                     [
-                        TextSendMessage(text="❌ 找不到音訊檔案，請再試一次"),
+                        TextSendMessage(text="❌ Audio file not found. Please try again."),
                         TextSendMessage(
-                            text="或者點擊「跳過此題」繼續下一題", 
+                            text="Or tap 'Skip this question' to continue with the next one.", 
                             quick_reply=QuickReply(items=[
-                                QuickReplyButton(action=MessageAction(label="跳過此題", text="跳過"))
+                                QuickReplyButton(action=MessageAction(label="Skip this question", text="Skip"))
                             ])
                         )
                     ]
@@ -1145,7 +1148,7 @@ def handle_audio_message(event):
 
             # 三階段評分邏輯
             is_correct = False
-            method = "模擬評估"
+            method = "Simulated Evaluation"
             feedback_text = ""
             score = 70  # 預設分數
 
@@ -1153,7 +1156,7 @@ def handle_audio_message(event):
                 # ==== Step 1: Google Speech-to-Text ====
                 if gcs_url:
                     try:
-                        logger.info(f"Step 1: 使用Google STT評估發音，參考文本: {current_q['thai']}")
+                        logger.info(f"Step 1: Using Google STT to evaluate pronunciation. Reference text: {current_q['thai']}")
                         
                         # 修正 GCS URL 格式問題
                         if gcs_url.startswith('https://storage.googleapis.com/'):
@@ -1173,7 +1176,7 @@ def handle_audio_message(event):
 
                         if response.results:
                             recognized_text = response.results[0].alternatives[0].transcript
-                            logger.info(f"識別文字: {recognized_text}")
+                            logger.info(f"Recognized text: {recognized_text}")
                             
                             # 計算相似度
                             similarity = SequenceMatcher(None, recognized_text.strip(), current_q['thai'].strip()).ratio()
@@ -1181,24 +1184,24 @@ def handle_audio_message(event):
                             is_correct = similarity >= 0.3
                             method = "Google STT"
                             if similarity >= 0.6:
-                                feedback_text = f"✅ 專業級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                                feedback_text = f"✅ Professional-level pronunciation! Score: {enhanced_score}/100, Similarity: {similarity:.2f}"
                             elif similarity >= 0.4:
-                                feedback_text = f"✅ 進階級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                                feedback_text = f"✅ Intermediate-level pronunciation! Score: {enhanced_score}/100, Similarity: {similarity:.2f}"
                             else:
-                                feedback_text = f"✅ 基礎級發音！分數：{enhanced_score}/100，相似度：{similarity:.2f}！"
+                                feedback_text = f"✅ Basic-level pronunciation! Score: {enhanced_score}/100, Similarity: {similarity:.2f}"
                             score = enhanced_score
-                            logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")    
+                            logger.info(f"Similarity: {similarity}, Evaluation result: {'Correct' if is_correct else 'Incorrect'}")    
                 
                         else:
-                            raise ValueError("無法辨識語音內容")
+                            raise ValueError("Unable to recognize speech content")
                     except Exception as e:
-                        logger.warning(f"Step 1: Google STT評估失敗: {str(e)}")
+                        logger.warning(f"Step 1: Google STT evaluation failed: {str(e)}")
                         raise
                 else:
-                    raise ValueError("無法獲取GCS URL")
+                    raise ValueError("Unable to retrieve GCS URL")
                     
             except Exception as e1:
-                logger.warning(f"Step 1 失敗，嘗試 Step 2: {str(e1)}")
+                logger.warning(f"Step 1 failed. Trying Step 2: {str(e1)}")
                 
                 # ==== Step 2: SpeechBrain 相似度比較 ====
                 try:
@@ -1226,13 +1229,13 @@ def handle_audio_message(event):
                                 if response.status_code == 200:
                                     with open(ref_audio_path, 'wb') as f:
                                         f.write(response.content)
-                                    logger.info(f"已下載參考音頻: {ref_audio_path}")
+                                    logger.info(f"Reference audio downloaded: {ref_audio_path}")
                                     break
                     
                     if ref_audio_path and os.path.exists(ref_audio_path):
                         # 確認檔案大小
                         if os.path.getsize(ref_audio_path) > 0:
-                            logger.info(f"Step 2: 使用SpeechBrain比較音頻相似度")
+                            logger.info(f"Step 2: Using SpeechBrain to compare audio similarity")
                             similarity_score = compute_similarity(audio_file_path, ref_audio_path)
                             
                             # 取消超時
@@ -1240,20 +1243,20 @@ def handle_audio_message(event):
                             
                             is_correct = similarity_score >= 0.5
                             method = "SpeechBrain"
-                            feedback_text = f"✅ 發音相似度為 {similarity_score:.2f}，{'通過' if is_correct else '需要再加強'}！"
+                            feedback_text = f"✅ Pronunciation similarity score: {similarity_score:.2f}, {'Passed' if is_correct else 'Needs improvement'}!"
                             score = int(similarity_score * 100)
-                            logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                            logger.info(f"Audio similarity: {similarity_score}, Evaluation result: {'Correct' if is_correct else 'Incorrect'}")
                         else:
                             raise ValueError("參考音頻檔案為空")
                         
                         # 清理參考音頻臨時檔案
                         try:
                             os.remove(ref_audio_path)
-                            logger.info(f"已移除參考音頻臨時檔: {ref_audio_path}")
+                            logger.info(f"Temporary reference audio file removed: {ref_audio_path}")
                         except:
                             pass
                     else:
-                        raise ValueError("找不到參考音頻檔案")
+                        raise ValueError("Reference audio file not found")
                         
                 except Exception as e2:
                     # 取消超時（如果有設置）
@@ -1262,22 +1265,22 @@ def handle_audio_message(event):
                     except:
                         pass
                         
-                    logger.warning(f"Step 2 失敗，進入最終 Step 3: {str(e2)}")
+                    logger.warning(f"Step 2 failed. Proceeding to final Step 3: {str(e2)}")
                     
                     # ==== Step 3: 模擬分數 (Fallback) ====
-                    logger.info(f"Step 3: 使用模擬評分")
+                    logger.info(f"Step 3: Using simulated scoring")
                     simulated_score = random.randint(50, 78)
                     is_correct = simulated_score >= 70
-                    method = "AI 評估"
-                    feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
+                    method = "AI Evaluation"
+                    feedback_text = f"✅ Pronunciation Score: {simulated_score}/100\nFeedback: Pronunciation {'is clear, keep it up!' if simulated_score >= 80 else 'is good, but there’s room for improvement.'}"
                     score = simulated_score
-                    logger.info(f"模擬分數: {simulated_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                    logger.info(f"Simulated score: {simulated_score}, Evaluation result: {'Correct' if is_correct else 'Incorrect'}")
 
             finally:
                 # 清理臨時音頻檔案
                 if os.path.exists(audio_file_path):
                     os.remove(audio_file_path)
-                    logger.info(f"✅ 已移除臨時音訊：{audio_file_path}")
+                    logger.info(f"✅ Temporary audio file removed: {audio_file_path}")
 
             # 根據評估結果更新考試成績
             if is_correct:
@@ -1285,7 +1288,7 @@ def handle_audio_message(event):
 
             # 發送評分反饋
             feedback = TextSendMessage(
-                text=f"📝 發音評分：{score}/100\n📘 此為 AI 評估，請持續練習，發音會越來越好喔！"
+                text=f"📝 Pronunciation Score: {score}/100\n📘 This is an AI evaluation. Keep practicing and your pronunciation will continue to improve!"
             )
             line_bot_api.push_message(user_id, feedback)
             
@@ -1301,24 +1304,24 @@ def handle_audio_message(event):
                 del exam_sessions[user_id]
                 
                 # 發送考試結果
-                summary = TextSendMessage(text=f"🏁 考試結束！共答對 {final_score}/{total} 題。")
+                summary = TextSendMessage(text=f"🏁 Exam finished! You got {final_score}/{total} correct.")
                 line_bot_api.push_message(user_id, summary)
             else:
                 # 短暫延遲後發送下一題
-                logger.info(f"用戶 {user_id} 完成考試題目 {session['current']}/{len(session['questions'])}, 分數: {session['correct']}")
-                logger.info(f"嘗試發送下一題，當前考試狀態: {exam_sessions.get(user_id, '已刪除')}")
+                logger.info(f"User {user_id} completed question {session['current']}/{len(session['questions'])}, Score: {session['correct']}")
+                logger.info(f"Attempting to send the next question. Current exam status: {exam_sessions.get(user_id, 'Deleted')}")
                 
                 # 獲取並發送下一題
                 next_q = send_exam_question(user_id)
-                logger.info(f"下一題生成結果類型: {type(next_q)}")
+                logger.info(f"Type of next question generated: {type(next_q)}")
                 try:
                         if isinstance(next_q, list):
                             line_bot_api.push_message(user_id, next_q)
                         else:
                             line_bot_api.push_message(user_id, [next_q])
-                        logger.info(f"成功發送下一題給用戶 {user_id}")
+                        logger.info(f"Successfully sent the next question to user {user_id}")
                 except Exception as e:
-                    logger.error(f"發送下一題失敗: {str(e)}")
+                    logger.error(f"Failed to send the next question: {str(e)}")
         return
     
     # 一般發音練習模式 (非考試模式)
@@ -1328,7 +1331,7 @@ def handle_audio_message(event):
         if not current_vocab or current_vocab not in thai_data['basic_words']:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="請先選擇一個詞彙進行學習，然後再練習發音")
+                TextSendMessage(text="Please select a word to study before practicing pronunciation.")
             )
             return
 
@@ -1342,13 +1345,13 @@ def handle_audio_message(event):
         if not audio_file_path or not os.path.exists(audio_file_path):
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="❌ 無法處理您的音頻，請再試一次")
+                TextSendMessage(text="❌ Unable to process your audio. Please try again.")
             )
             return
             
         # 三階段評分邏輯實施
         is_correct = False
-        method = "模擬評估"
+        method = "Simulated Evaluation"
         feedback_text = ""
         score = 70
         
@@ -1382,18 +1385,18 @@ def handle_audio_message(event):
                     is_correct = similarity >= 0.3
                     method = "Google STT"
                     if similarity >= 0.6:
-                        feedback_text = f"✅ 專業級發音！分數：{enhanced_score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                        feedback_text = f"✅ Professional-level pronunciation! Score: {enhanced_score}/100\nYour pronunciation was recognized as \"{recognized_text}\"\nSimilarity to the target: {similarity:.2f}"
                     elif similarity >= 0.4:
-                         feedback_text = f"✅ 進階級發音！分數：{enhanced_score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                         feedback_text = f"✅ Intermediate-level pronunciation! Score: {enhanced_score}/100\nYour pronunciation was recognized as \"{recognized_text}\"\nSimilarity to the target: {similarity:.2f}"
                     else:
-                         feedback_text = f"✅ 基礎級發音！分數：{enhanced_score}/100\n您的發音被識別為「{recognized_text}」\n與標準相似度為 {similarity:.2f}！"
+                         feedback_text = f"✅ Basic-level pronunciation! Score: {enhanced_score}/100\nYour pronunciation was recognized as \"{recognized_text}\"\nSimilarity to the target: {similarity:.2f}"
                     score = enhanced_score
-                    logger.info(f"相似度: {similarity}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                    logger.info(f"Similarity: {similarity}, Evaluation result: {'Correct' if is_correct else 'Incorrect'}")
                 else:
-                    raise ValueError("無法辨識語音內容")
+                    raise ValueError("Unable to recognize speech content")
                     
         except Exception as e1:
-            logger.warning(f"Step 1 失敗，嘗試 Step 2: {str(e1)}")
+            logger.warning(f"Step 1 failed. Trying Step 2: {str(e1)}")
             
             # ==== Step 2: SpeechBrain 相似度比較 ====
             try:
@@ -1479,42 +1482,42 @@ def handle_audio_message(event):
         if not feedback_text:
             # 評分等級與回饋
             if score >= 90:
-                feedback_text = "🌟 太棒了！你的發音非常標準！"
+                feedback_text = "🌟 Excellent! Your pronunciation is very accurate!"
             elif score >= 75:
-                feedback_text = "👍 很好！你的發音相當不錯，繼續練習！"
+                feedback_text = "👍 Great job! Your pronunciation is quite good. Keep it up!"
             elif score >= 60:
-                feedback_text = "👌 不錯的嘗試！還有一些小地方可以調整。"
+                feedback_text = "👌 Good try! A few areas still need improvement."
             else:
-                feedback_text = "💪 繼續努力！多聽多練習，你會進步的！"
+                feedback_text = "💪 Keep going! Practice and listening will help you improve!"
         
         # 添加評分訊息
         response_messages.append(TextSendMessage(
-            text=f"📝 發音評估結果：\n\n{feedback_text}\n\n要繼續練習嗎？點擊「再聽一次」可以再聽標準發音。"
+            text=f"📝 Pronunciation Feedback:\n\n{feedback_text}\n\nWant to practice more? Tap 'Play Again' to hear the standard pronunciation."
         ))
         
         # 添加選項按鈕
         buttons_template = ButtonsTemplate(
-            title="發音練習",
-            text="其他選項",
+            title="Pronunciation Practice",
+            text="What would you like to do next?",
             actions=[
-                MessageAction(label="再聽一次", text=f"播放音頻:{current_vocab}"),
-                MessageAction(label="下一個詞彙", text="下一個詞彙"),
-                MessageAction(label="返回主選單", text="返回主選單")
+                MessageAction(label="Play Again", text=f"Play Audio:{current_vocab}"),
+                MessageAction(label="Next Word", text="Next Word"),
+                MessageAction(label="Back to Menu", text="Back to Main Menu")
             ]
         )
         
         response_messages.append(TemplateSendMessage(
-            alt_text="發音練習選項",
+            alt_text="Pronunciation Practice Option",
             template=buttons_template
         ))
         
         line_bot_api.reply_message(event.reply_token, response_messages)
         
     except Exception as e:
-        logger.error(f"處理音頻評估時發生錯誤: {str(e)}", exc_info=True)
+        logger.error(f"Error during pronunciation evaluation: {str(e)}", exc_info=True)
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=f"處理您的發音時發生錯誤，請再試一次")
+            TextSendMessage(text=f"An error occurred while processing your pronunciation. Please try again.")
         )
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -1568,29 +1571,29 @@ def handle_text_message(event):
                     )
                     return
                 except Exception as e:
-                    logger.error(f"發送音頻時出錯: {str(e)}")
+                    logger.error(f"Error occurred while sending audio: {str(e)}")
                     line_bot_api.reply_message(
                         event.reply_token,
-                        TextSendMessage(text="發送音頻時出錯，請再試一次")
+                        TextSendMessage(text="An error occurred while sending the audio. Please try again.")
                     )
                     return
             else:
-                logger.warning(f"詞彙 {word} 沒有音頻 URL")
+                logger.warning(f"No audio URL found for word: {word}")
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text=f"抱歉，找不到「{word}」的音頻")
+                    TextSendMessage(text=f"Sorry, no audio available for '{word}'.")
                 )
                 return
         else:
-            logger.warning(f"找不到詞彙: {word}")
+            logger.warning(f"Word not found: {word}")
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=f"抱歉，找不到「{word}」這個詞彙")
+                TextSendMessage(text=f"Sorry, the word '{word}' was not found.")
             )
             return
     
     # 主選單與基本導航
-    if text == "開始學習" or text == "返回主選單":
+    if text == "Start Learning" or text == "返回主選單":
         exam_sessions.pop(user_id, None)  # ❗️清除考試狀態，避免干擾
         line_bot_api.reply_message(event.reply_token, show_main_menu())
     
@@ -1617,19 +1620,19 @@ def handle_text_message(event):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
+                TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.1")
             )
     
     # 學習模式選擇
-    elif text == "詞彙學習":
+    elif text == "Vocabulary":
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "練習發音":
+    elif text == "Pronunciation Practice":
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "音調學習":
+    elif text == "Tone Learning":
         messages = start_tone_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
@@ -1655,7 +1658,7 @@ def handle_text_message(event):
         if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="您還沒有足夠的學習記錄，請先進行一些詞彙學習和發音練習！")
+                TextSendMessage(text="You don't have enough learning history yet. Please start with some vocabulary and pronunciation practice first!")
             )
             return
             
@@ -1668,15 +1671,15 @@ def handle_text_message(event):
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "學習日曆":
+    elif text == "Learning Calendar":
         # 顯示用戶的學習日曆和連續學習天數
         streak = user_data.get('streak', 0)
-        last_active = user_data.get('last_active', '尚未開始學習')
+        last_active = user_data.get('last_active', 'Not started yet')
         
-        calendar_message = f"您的學習記錄：\n\n"
-        calendar_message += f"連續學習天數：{streak} 天\n"
-        calendar_message += f"最近學習日期：{last_active}\n\n"
-        calendar_message += "繼續保持學習熱情！每天學習一點，泰語能力會穩步提高。"
+        calendar_message = f"📅 Your Learning Record：\n\n"
+        calendar_message += f"🔥 Consecutive learning days: {streak} days\n"
+        calendar_message += f"🕓 Last active date：{last_active}\n\n"
+        calendar_message += "Keep up the great work! A little progress every day will steadily improve your Thai skills."
         
         line_bot_api.reply_message(
             event.reply_token,
@@ -1685,18 +1688,18 @@ def handle_text_message(event):
     elif text == "考試模式":
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='日常用語', text='開始日常用語考試')),
-                QuickReplyButton(action=MessageAction(label='數字', text='開始數字考試')),
-                QuickReplyButton(action=MessageAction(label='動物', text='開始動物考試')),
-                QuickReplyButton(action=MessageAction(label='食物', text='開始食物考試')),
-                QuickReplyButton(action=MessageAction(label='交通工具', text='開始交通工具考試')),
-                QuickReplyButton(action=MessageAction(label='綜合考試', text='開始綜合考試'))
+                QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Start Daily Phrases Exam')),
+                QuickReplyButton(action=MessageAction(label='Numbers', text='Start Numbers Exam')),
+                QuickReplyButton(action=MessageAction(label='Animals', text='Start Animals Exam')),
+                QuickReplyButton(action=MessageAction(label='Food', text='Start Food Exam')),
+                QuickReplyButton(action=MessageAction(label='Transportation', text='Start Transportation Exam')),
+                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Comprehensive Exam'))
             ]
         )
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(
-                text="請選擇要進行的考試類別：",
+                text="Please choose a category for the exam:",
                 quick_reply=quick_reply
             )
         )
@@ -1705,7 +1708,7 @@ def handle_text_message(event):
         # 默認回覆
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
+            TextSendMessage(text="Please select 'Start Learning' or use the menu to begin your Thai learning journey.")
         )
 
 def handle_exam_message(event):
@@ -1766,10 +1769,10 @@ def handle_exam_message(event):
             score = session["correct"]
             
             # 儲存考試結果到 Firebase
-            save_exam_result(user_id, score, total, exam_type="綜合考試")
+            save_exam_result(user_id, score, total, exam_type="Comprehensive Exam")
             
             del exam_sessions[user_id]
-            return TextSendMessage(text=f"✅ 考試結束！\n您答對了 {score}/{total} 題。")
+            return TextSendMessage(text=f" Exam completed!\nYou answered {score}/{total} questions correctly.")
         
         # 傳送下一題
         return send_exam_question(user_id)
@@ -1790,9 +1793,9 @@ def handle_exam_message(event):
         # 準備反饋訊息
         if is_correct:
             session["correct"] += 1
-            feedback = f"✅ 正確！「{user_answer}」是正確答案。"
+            feedback = f"✅ Correct! \"{user_answer}\" is the right answer."
         else:
-            feedback = f"❌ 錯誤，正確答案是「{correct_answer}」。"
+            feedback = f"❌ Incorrect. The correct answer is \"{correct_answer}\"."
         
         feedback_message = TextSendMessage(text=feedback)
     else:
@@ -1813,10 +1816,10 @@ def handle_exam_message(event):
         if feedback_message:
             return [
                 feedback_message,
-                TextSendMessage(text=f"✅ 考試結束！\n您答對了 {score}/{total} 題。")
+                TextSendMessage(text=f"✅ Exam completed!\nYou answered {score}/{total} questions correctly.")
             ]
         else:
-            return TextSendMessage(text=f"✅ 考試結束！\n您答對了 {score}/{total} 題。")
+            return TextSendMessage(text=f"✅ Exam completed!\nYou answered {score}/{total} questions correctly.")
 
     # 還有更多題目
     next_question = send_exam_question(user_id)
@@ -1837,7 +1840,7 @@ def send_exam_question(user_id):
     # 檢查用戶是否在考試狀態
     if user_id not in exam_sessions:
         logger.error(f"用戶 {user_id} 不在考試狀態中，無法發送題目")
-        return TextSendMessage(text="考試狀態錯誤，請重新開始考試。")
+        return TextSendMessage(text="Exam status error. Please restart the exam.")
     
     try:
         # 獲取考試狀態
@@ -1846,12 +1849,12 @@ def send_exam_question(user_id):
         # 檢查session是否包含必要的信息
         if "questions" not in session or "current" not in session:
             logger.error(f"考試狀態不完整: {session}")
-            return TextSendMessage(text="考試狀態不完整，請重新開始考試。")
+            return TextSendMessage(text="Incomplete exam status. Please restart the exam.")
         
         # 檢查索引是否有效
         if session["current"] >= len(session["questions"]):
             logger.error(f"題目索引超出範圍: {session['current']}/{len(session['questions'])}")
-            return TextSendMessage(text="已完成所有題目，考試結束。")
+            return TextSendMessage(text="You have completed all the questions. The exam is now finished.")
         
         # 從這裡開始是原有代碼
         question = session["questions"][session["current"]]
@@ -1859,18 +1862,18 @@ def send_exam_question(user_id):
         total = len(session["questions"])
 
         # 添加「跳過」按鈕
-        skip_button = QuickReplyButton(action=MessageAction(label="跳過此題", text="跳過"))
+        skip_button = QuickReplyButton(action=MessageAction(label="Skip this question", text="Skip"))
 
         if question["type"] == "pronounce":
             return [
-                TextSendMessage(text=f"第 {q_num}/{total} 題：請看到圖片後唸出對應泰文"),
+                TextSendMessage(text=f"Question {q_num}/{total}: Please look at the image and say the corresponding Thai word."),
                 ImageSendMessage(
                     original_content_url=question["image_url"], 
                     preview_image_url=question["image_url"]
                 ),
                 # 添加跳過按鈕
                 TextSendMessage(
-                    text="若要跳過此題，請點擊「跳過此題」", 
+                    text="To skip this question, please tap 'Skip this question'.", 
                     quick_reply=QuickReply(items=[skip_button])
                 )
             ]
@@ -1887,24 +1890,24 @@ def send_exam_question(user_id):
             quick_reply_items.append(skip_button)
 
             return [
-                TextSendMessage(text=f"第 {q_num}/{total} 題：請聽音檔後從以下選項選出正確答案"),
+                TextSendMessage(text=f"Question {q_num}/{total}: Listen to the audio and choose the correct answer from the options below."),
                 AudioSendMessage(
                     original_content_url=audio_url,
                     duration=3000
                 ),
                 TextSendMessage(
-                    text="請選擇:", 
+                    text="Please choose:", 
                     quick_reply=QuickReply(items=quick_reply_items)
                 )
             ]
         else:
             logger.error(f"未知的題型: {question['type']}")
-            return TextSendMessage(text="題型錯誤，請跳過此題")
+            return TextSendMessage(text="Invalid question type. Please skip this question.")
             
     except Exception as e:
         # 捕獲任何可能發生的錯誤
         logger.error(f"生成考試題目時發生錯誤: {str(e)}")
-        return TextSendMessage(text="生成題目時發生錯誤，請重新開始考試。")
+        return TextSendMessage(text="An error occurred while generating the question. Please restart the exam.")
 #=== 考試結果儲存 ===    
 def save_exam_result(user_id, score, total, exam_type="綜合考試"):
     ref = db.collection("users").document(user_id).collection("exams").document()
@@ -1925,16 +1928,16 @@ def show_category_menu():
     
     quick_reply = QuickReply(
         items=[
-            QuickReplyButton(action=MessageAction(label='日常用語', text='主題:日常用語')),
-            QuickReplyButton(action=MessageAction(label='數字', text='主題:數字')),
-            QuickReplyButton(action=MessageAction(label='動物', text='主題:動物')),
-            QuickReplyButton(action=MessageAction(label='食物', text='主題:食物')),
-            QuickReplyButton(action=MessageAction(label='交通工具', text='主題:交通工具'))
+            QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Topic: Daily Phrases')),
+            QuickReplyButton(action=MessageAction(label='Numbers', text='Topic: Numbers')),
+            QuickReplyButton(action=MessageAction(label='Animals', text='Topic: Animals')),
+            QuickReplyButton(action=MessageAction(label='Food', text='Topic: Food')),
+            QuickReplyButton(action=MessageAction(label='Transportation', text='Topic: Transportation'))
         ]
     )
     
     return TextSendMessage(
-        text="請選擇您想學習的主題：",
+        text="Please select a topic to learn:",
         quick_reply=quick_reply
     )
 
@@ -1979,22 +1982,22 @@ def start_image_learning(user_id, category=None):
     # 添加詞彙訊息
     message_list.append(
         TextSendMessage(
-            text=f"泰語：{word_data['thai']}\n中文：{word_key}\n發音：{word_data['pronunciation']}\n音調：{word_data['tone']}"
+            text=f"Thai: {word_data['thai']}\nEnglish: {word_key}\nPronunciation: {word_data['pronunciation']}\nTone: {word_data['tone']}"
         )
     )
     
     # 添加選項按鈕
     buttons_template = ButtonsTemplate(
-        title="詞彙學習",
-        text="請選擇下一步",
+        title="Vocabulary Practice",
+        text="Please choose your next step:",
         actions=[
-            MessageAction(label="練習發音", text="練習發音"),
-            MessageAction(label="下一個詞彙", text="下一個詞彙"),
-            MessageAction(label="返回主選單", text="返回主選單")
+            MessageAction(label="Pronunciation Practice", text="Pronunciation Practice"),
+            MessageAction(label="Next Word", text="Next Word"),
+            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
         ]
     )
     message_list.append(
-        TemplateSendMessage(alt_text="詞彙學習選項", template=buttons_template)
+        TemplateSendMessage(alt_text="Vocabulary Practice Options", template=buttons_template)
     )
     
     return message_list
@@ -2035,13 +2038,13 @@ def start_echo_practice(user_id):
     # 添加回音法三步驟與詞彙發音提示
     message_list.append(
         TextSendMessage(
-            text="🧠【回音法 Echo Method】\n\n"
-                 "1. Listen：聽一句泰文單字\n"
-                 "2. Echo：靜下來 3 秒，在腦中重播剛聽到的聲音與語調\n"
-                 "3. Mimic：大聲模仿你腦中的回音\n\n"
-                 f"📣 練習詞彙：{word_data['thai']}\n"
-                 f"發音：{word_data['pronunciation']}\n\n"
-                 "請點擊聊天室底部的麥克風圖標(🎤)錄製您的發音"
+            text="🧠【Echo Method for Pronunciation】\n\n"
+                 "1. Listen: Hear a Thai word.\n"
+                 "2. Echo：Pause for 3 seconds and replay the sound and tone in your mind.\n"
+                 "3. Mimic：Imitate the sound out loud from your internal echo.\n\n"
+                 f"📣 Practice Word：{word_data['thai']}\n"
+                 f"Pronunciation：{word_data['pronunciation']}\n\n"
+                 "Please tap the 🎤 microphone icon at the bottom to record your pronunciation."
     )
 )
    
@@ -2052,19 +2055,20 @@ def start_echo_practice(user_id):
             tone_info += thai_data['tone_guide'][part] + "\n"
     
     message_list.append(
-        TextSendMessage(text=f"音調指南：\n{tone_info}")
+        TextSendMessage(text=f"Tone Guide：\n{tone_info}")
     )
     
     # 添加選項按鈕（移除錄音按鈕，因為會使用LINE聊天界面的麥克風按鈕）
     buttons_template = ButtonsTemplate(
-        title="發音練習",
-        text="其他選項",
+        title="Pronunciation Practice",
+        text="Other Options",
         actions=[
-            MessageAction(label="再聽一次", text=f"播放音頻:{word_key}"),
-            MessageAction(label="返回主選單", text="返回主選單")
+            MessageAction(label="Play Again", text=f"Play Audio: {word_key}"),
+            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
         ]
     )
     message_list.append(
+
         TemplateSendMessage(alt_text="發音練習", template=buttons_template)
     )
     
@@ -2082,7 +2086,12 @@ def start_tone_learning(user_id):
     # 泰語音調介紹
     message_list.append(
         TextSendMessage(
-            text="泰語有五種音調，不同音調會改變詞義：\n\n1. 中調 (無標記)\n2. 低調 (่)\n3. 降調 (้)\n4. 高調 (๊)\n5. 升調 (๋)"
+            text="There are five tones in Thai. Each tone can change the meaning of a word:\n\n"
+         "1. Mid Tone (no mark)\n"
+         "2. Low Tone (่)\n"
+         "3. Falling Tone (้)\n"
+         "4. High Tone (๊)\n"
+         "5. Rising Tone (๋)"
         )
     )
     
@@ -2095,12 +2104,12 @@ def start_tone_learning(user_id):
     
     # 添加選項按鈕
     buttons_template = ButtonsTemplate(
-        title="音調學習",
-        text="請選擇操作",
+        title="Tone Learning",
+        text="Please choose an action",
         actions=[
-            MessageAction(label="練習發音", text="練習發音"),
-            MessageAction(label="詞彙學習", text="詞彙學習"),
-            MessageAction(label="返回主選單", text="返回主選單")
+            MessageAction(label="Pronunciation Practice", text="Pronunciation Practice"),
+            MessageAction(label="Vocabulary", text="Vocabulary"),
+            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
         ]
     )
     message_list.append(
@@ -2117,7 +2126,7 @@ def show_learning_progress(user_id):
     progress = load_progress(user_id)
 
     if not progress:
-        return TextSendMessage(text="您還沒有開始學習。請選擇「詞彙學習」或「發音練習」開始您的泰語學習之旅！")
+        return TextSendMessage(text="You haven't started learning yet. Please choose 'Vocabulary' or 'Pronunciation Practice' to begin your Thai learning journey!")
 
     total_words = len(progress)
     total_practices = sum(data.get("times", 1) for data in progress.values())
@@ -2128,29 +2137,29 @@ def show_learning_progress(user_id):
     worst_word = min(progress.items(), key=lambda x: x[1].get("score", 100))
 
     # 生成報告
-    progress_report = f"📘 學習進度報告\n\n"
-    progress_report += f"🟦 已學習詞彙：{total_words} 個\n"
-    progress_report += f"🔁 總練習次數：{total_practices} 次\n"
-    progress_report += f"📈 平均發音評分：{avg_score:.1f}/100\n\n"
-    progress_report += f"🏆 最佳詞彙：{best_word[0]}（{thai_data['basic_words'].get(best_word[0], {}).get('thai', '')}）\n"
-    progress_report += f"🧩 需加強詞彙：{worst_word[0]}（{thai_data['basic_words'].get(worst_word[0], {}).get('thai', '')}）"
+    progress_report = f"📘 Learning Progress Report\n\n"
+    progress_report += f"🟦 Vocabulary Learned: {total_words} words\n"
+    progress_report += f"🔁 Total Practice Attempts: {total_practices} times\n"
+    progress_report += f"📈 Average Pronunciation Score: {avg_score:.1f}/100\n\n"
+    progress_report += f"🏆 Best Word: {best_word[0]} ({thai_data['basic_words'].get(best_word[0], {}).get('thai', '')})\n"
+    progress_report += f"🧩 Word to Improve: {worst_word[0]} ({thai_data['basic_words'].get(worst_word[0], {}).get('thai', '')})"
 
     return TextSendMessage(text=progress_report)
 
     # 添加進度按鈕
     buttons_template = ButtonsTemplate(
-        title="學習進度",
-        text="選擇下一步",
+        title="Learning Progress",
+        text="Choose your next step:",
         actions=[
-            MessageAction(label="練習弱點詞彙", text="練習弱點"),
-            MessageAction(label="查看學習日曆", text="學習日曆"),
-            MessageAction(label="返回主選單", text="返回主選單")
+            MessageAction(label="Practice Weak Words", text="Practice Weak Words"),
+            MessageAction(label="View Learning Calenda", text="Learning Calendar"),
+            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
         ]
     )
     
     return [
         TextSendMessage(text=progress_report),
-        TemplateSendMessage(alt_text="學習進度選項", template=buttons_template)
+        TemplateSendMessage(alt_text="Learning Progress Options", template=buttons_template)
     ]
 
 def show_main_menu():
@@ -2160,18 +2169,18 @@ def show_main_menu():
     # 使用 QuickReply 代替 ButtonsTemplate，因為 QuickReply 可以支援更多按鈕
     quick_reply = QuickReply(
         items=[
-            QuickReplyButton(action=MessageAction(label='選擇主題', text='選擇主題')),
-            QuickReplyButton(action=MessageAction(label='詞彙學習', text='詞彙學習')),
-            QuickReplyButton(action=MessageAction(label='發音練習', text='練習發音')),
-            QuickReplyButton(action=MessageAction(label='音調學習', text='音調學習')),
-            QuickReplyButton(action=MessageAction(label='記憶遊戲', text='開始記憶遊戲')),
-            QuickReplyButton(action=MessageAction(label='學習進度', text='學習進度')),
-             QuickReplyButton(action=MessageAction(label='考試模式', text='考試模式'))
+            QuickReplyButton(action=MessageAction(label='Select Topic', text='Select Topic')),
+            QuickReplyButton(action=MessageAction(label='Vocabulary', text='Vocabulary')),
+            QuickReplyButton(action=MessageAction(label='Pronunciation Practice', text='Pronunciation Practice')),
+            QuickReplyButton(action=MessageAction(label='Tone Learning', text='Tone Learning')),
+            QuickReplyButton(action=MessageAction(label='Memory Game', text='Start Memory Game')),
+            QuickReplyButton(action=MessageAction(label='Learning Progress', text='Learning Progress')),
+             QuickReplyButton(action=MessageAction(label='Exam Mode', text='Exam Mode'))
         ]
     )
     
     return TextSendMessage(
-        text="🇹🇭 歡迎使用泰語學習系統 🇹🇭\n請選擇您想要的學習模式：",
+        text="🇹🇭 Welcome to the Thai Learning System 🇹🇭\nPlease choose your preferred learning mode:",
         quick_reply=quick_reply
     )
 # === 第五部分：記憶翻牌遊戲和訊息處理 ===
@@ -2408,16 +2417,16 @@ def handle_memory_game(user_id, message):
         # 顯示主題選單
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='日常用語', text='記憶遊戲主題:日常用語')),
-                QuickReplyButton(action=MessageAction(label='數字', text='記憶遊戲主題:數字')),
-                QuickReplyButton(action=MessageAction(label='動物', text='記憶遊戲主題:動物')),
-                QuickReplyButton(action=MessageAction(label='食物', text='記憶遊戲主題:食物')),
-                QuickReplyButton(action=MessageAction(label='交通工具', text='記憶遊戲主題:交通工具'))
+                QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Memory Game Topic: Daily Phrases')),
+                QuickReplyButton(action=MessageAction(label='Numbers', text='Memory Game Topic: Numbers')),
+                QuickReplyButton(action=MessageAction(label='Animals', text='Memory Game Topic: Animals')),
+                QuickReplyButton(action=MessageAction(label='Food', text='Memory Game Topic: Food')),
+                QuickReplyButton(action=MessageAction(label='Transportation', text='Memory Game Topic: Transportation'))
             ]
         )
         
         return TextSendMessage(
-          text="🎮 記憶翻牌遊戲\n\n遊戲規則：\n1. 翻開卡片找出配對的圖片和發音\n2. 遊戲時間限制為1分30秒\n3. 完成速度越快評價越高\n\n請選擇一個主題開始遊戲：",
+          text="🎮 Memory Matching Game\n\nGame Rules:\n1. Flip the cards to find matching image and pronunciation pairs\n2. You have 1 minute and 30 seconds to complete the game\n3. The faster you finish, the better your rating\n\nPlease choose a topic to begin:",
             quick_reply=quick_reply
         )
     
@@ -2448,11 +2457,11 @@ def handle_memory_game(user_id, message):
                 # 創建遊戲畫面 (使用 Flex Message)
                 return create_flex_memory_game(cards, game.get_game_state(), user_id)
             else:
-                logger.error(f"在 thai_data 中找不到類別 {eng_category}")
-                return TextSendMessage(text=f"抱歉，在資料中找不到「{category}」類別。請聯繫管理員。")
+                logger.error(f"Category '{eng_category}' not found in thai_data")
+                return TextSendMessage(text=f"Sorry, the category '{category}' was not found in the data. Please contact the administrator.")
         else:
-            logger.warning(f"無法識別主題: {category}")
-            return TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
+            logger.warning(f"Unrecognized topic: {category}")
+            return TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
     
     elif message.startswith("翻牌:"):
         try:
@@ -2493,11 +2502,11 @@ def handle_memory_game(user_id, message):
                 # 遊戲結束或超時，顯示結果
                 messages.append(
                     TextSendMessage(
-                        text="遊戲結束！要再玩一次嗎？",
+                        text="Game over! Would you like to play again？",
                         quick_reply=QuickReply(
                             items=[
-                                QuickReplyButton(action=MessageAction(label='再玩一次', text='開始記憶遊戲')),
-                                QuickReplyButton(action=MessageAction(label='返回主選單', text='返回主選單'))
+                                QuickReplyButton(action=MessageAction(label='Play Again', text='Start Memory Game')),
+                                QuickReplyButton(action=MessageAction(label='Back to Main Menu', text='Back to Main Menu'))
                             ]
                         )
                     )
@@ -2505,7 +2514,7 @@ def handle_memory_game(user_id, message):
                 return messages
         except Exception as e:
             logger.error(f"處理翻牌請求時發生錯誤: {str(e)}")
-            return TextSendMessage(text=f"處理翻牌請求時發生錯誤: {str(e)}\n請重試或選擇「返回主選單」。")
+            return TextSendMessage(text=f"An error occurred while processing your card flip: {str(e)}\nPlease try again or select 'Back to Main Menu'.")
     
     elif message.startswith("播放音頻:"):
         word = message.split(":", 1)[1] if ":" in message else ""
@@ -2525,10 +2534,10 @@ def handle_memory_game(user_id, message):
                 ]
                 return messages
         
-        return TextSendMessage(text="抱歉，無法播放該音頻。")
+        return TextSendMessage(text="Sorry, the audio could not be played.")
     
     # 默認回傳
-    return TextSendMessage(text="請選擇「開始記憶遊戲」開始新的遊戲")
+    return TextSendMessage(text="Please select 'Start Memory Game' to begin a new game.")
 
 def create_flex_memory_game(cards, game_state, user_id):
     """創建 Flex Message 的記憶翻牌遊戲界面"""
@@ -2647,7 +2656,7 @@ def create_flex_memory_game(cards, game_state, user_id):
     except Exception as e:
         import logging
         logging.getLogger().error(f"創建 Flex Message 時發生錯誤: {str(e)}")
-        return TextSendMessage(text="遊戲畫面出現異常，請稍後再試")
+        return TextSendMessage(text="The game display encountered an issue. Please try again later.")
 
     # ✅ 考試指令過濾（只有在符合格式才執行）
     if text.startswith("開始") and "考" in text:
@@ -2709,7 +2718,7 @@ def create_flex_memory_game(cards, game_state, user_id):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="抱歉，無法識別該主題。請重新選擇。")
+                TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
             )
     
     # 學習模式選擇
@@ -2747,7 +2756,7 @@ def create_flex_memory_game(cards, game_state, user_id):
         if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="您還沒有足夠的學習記錄，請先進行一些詞彙學習和發音練習！")
+                TextSendMessage(text="You don't have enough learning history yet. Please start with some vocabulary and pronunciation practice!")
             )
             return
             
@@ -2760,15 +2769,15 @@ def create_flex_memory_game(cards, game_state, user_id):
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "學習日曆":
+    elif text == "Learning Calendar":
         # 顯示用戶的學習日曆和連續學習天數
         streak = user_data.get('streak', 0)
-        last_active = user_data.get('last_active', '尚未開始學習')
+        last_active = user_data.get('last_active', 'Not started yet')
         
-        calendar_message = f"您的學習記錄：\n\n"
-        calendar_message += f"連續學習天數：{streak} 天\n"
-        calendar_message += f"最近學習日期：{last_active}\n\n"
-        calendar_message += "繼續保持學習熱情！每天學習一點，泰語能力會穩步提高。"
+        calendar_message = f"📅Your Learning Record：\n\n"
+        calendar_message += f"🔥 Consecutive Learning Days: {streak} days\n"
+        calendar_message += f"🕓 Last Active Date: {last_active}\n\n"
+        calendar_message += "Keep up your learning motivation! A little every day will steadily improve your Thai skills."
         
         line_bot_api.reply_message(
             event.reply_token,
@@ -2777,18 +2786,18 @@ def create_flex_memory_game(cards, game_state, user_id):
     elif text == "考試模式":
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='日常用語', text='開始日常用語考試')),
-                QuickReplyButton(action=MessageAction(label='數字', text='開始數字考試')),
-                QuickReplyButton(action=MessageAction(label='動物', text='開始動物考試')),
-                QuickReplyButton(action=MessageAction(label='食物', text='開始食物考試')),
-                QuickReplyButton(action=MessageAction(label='交通工具', text='開始交通工具考試')),
-                QuickReplyButton(action=MessageAction(label='綜合考試', text='開始綜合開考試'))
+                QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Start Daily Phrases Exam')),
+                QuickReplyButton(action=MessageAction(label='Numbers', text='Start Numbers Exam')),
+                QuickReplyButton(action=MessageAction(label='Animals', text='Start Animals Exam')),
+                QuickReplyButton(action=MessageAction(label='Food', text='Start Food Exam')),
+                QuickReplyButton(action=MessageAction(label='Transportation', text='Start Transportation Exam')),
+                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Comprehensive Exam'))
             ]
         )
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(
-                text="請選擇要進行的考試類別：",
+                text="Please select a category for the exam:",
                 quick_reply=quick_reply
             )
         )
@@ -2799,7 +2808,7 @@ def create_flex_memory_game(cards, game_state, user_id):
         # 默認回覆
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="請選擇「開始學習」或點擊選單按鈕開始泰語學習之旅")
+            TextSendMessage(text="Please select 'Start Learning' or use the menu button to begin your Thai learning journey.")
         )
 import threading
 import time  # ✅ 加上這行
