@@ -1497,7 +1497,7 @@ def handle_audio_message(event):
         
         # 添加選項按鈕
         buttons_template = ButtonsTemplate(
-            title="Pronunciation Practice",
+            title="Pronunciation drill",
             text="What would you like to do next?",
             actions=[
                 MessageAction(label="Play Again", text=f"Play Audio:{current_vocab}"),
@@ -1507,7 +1507,7 @@ def handle_audio_message(event):
         )
         
         response_messages.append(TemplateSendMessage(
-            alt_text="Pronunciation Practice Option",
+            alt_text="Pronunciation drill Option",
             template=buttons_template
         ))
         
@@ -1628,7 +1628,7 @@ def handle_text_message(event):
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "Pronunciation Practice":
+    elif text == "Pronunciation drill":
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
@@ -1693,7 +1693,7 @@ def handle_text_message(event):
                 QuickReplyButton(action=MessageAction(label='Animals', text='Start Animals Exam')),
                 QuickReplyButton(action=MessageAction(label='Food', text='Start Food Exam')),
                 QuickReplyButton(action=MessageAction(label='Transportation', text='Start Transportation Exam')),
-                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Comprehensive Exam'))
+                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Full Exam'))
             ]
         )
         line_bot_api.reply_message(
@@ -1991,7 +1991,7 @@ def start_image_learning(user_id, category=None):
         title="Vocabulary Practice",
         text="Please choose your next step:",
         actions=[
-            MessageAction(label="Pronunciation Practice", text="Pronunciation Practice"),
+            MessageAction(label="Pronunciation drill", text="Pronunciation drill"),
             MessageAction(label="Next Word", text="Next Word"),
             MessageAction(label="Back to Main Menu", text="Back to Main Menu")
         ]
@@ -2060,7 +2060,7 @@ def start_echo_practice(user_id):
     
     # 添加選項按鈕（移除錄音按鈕，因為會使用LINE聊天界面的麥克風按鈕）
     buttons_template = ButtonsTemplate(
-        title="Pronunciation Practice",
+        title="Pronunciation drill",
         text="Other Options",
         actions=[
             MessageAction(label="Play Again", text=f"Play Audio: {word_key}"),
@@ -2107,7 +2107,7 @@ def start_tone_learning(user_id):
         title="Tone Learning",
         text="Please choose an action",
         actions=[
-            MessageAction(label="Pronunciation Practice", text="Pronunciation Practice"),
+            MessageAction(label="Pronunciation drill", text="Pronunciation drill"),
             MessageAction(label="Vocabulary", text="Vocabulary"),
             MessageAction(label="Back to Main Menu", text="Back to Main Menu")
         ]
@@ -2126,7 +2126,7 @@ def show_learning_progress(user_id):
     progress = load_progress(user_id)
 
     if not progress:
-        return TextSendMessage(text="You haven't started learning yet. Please choose 'Vocabulary' or 'Pronunciation Practice' to begin your Thai learning journey!")
+        return TextSendMessage(text="You haven't started learning yet. Please choose 'Vocabulary' or 'Pronunciation drill' to begin your Thai learning journey!")
 
     total_words = len(progress)
     total_practices = sum(data.get("times", 1) for data in progress.values())
@@ -2137,7 +2137,7 @@ def show_learning_progress(user_id):
     worst_word = min(progress.items(), key=lambda x: x[1].get("score", 100))
 
     # 生成報告
-    progress_report = f"📘 Learning Progress Report\n\n"
+    progress_report = f"📘 LearningProgress Report\n\n"
     progress_report += f"🟦 Vocabulary Learned: {total_words} words\n"
     progress_report += f"🔁 Total Practice Attempts: {total_practices} times\n"
     progress_report += f"📈 Average Pronunciation Score: {avg_score:.1f}/100\n\n"
@@ -2148,10 +2148,10 @@ def show_learning_progress(user_id):
 
     # 添加進度按鈕
     buttons_template = ButtonsTemplate(
-        title="Learning Progress",
+        title="LearningProgress",
         text="Choose your next step:",
         actions=[
-            MessageAction(label="Practice Weak Words", text="Practice Weak Words"),
+            MessageAction(label="Practice WeakWords", text="Practice WeakWords"),
             MessageAction(label="View Learning Calenda", text="Learning Calendar"),
             MessageAction(label="Back to Main Menu", text="Back to Main Menu")
         ]
@@ -2159,7 +2159,7 @@ def show_learning_progress(user_id):
     
     return [
         TextSendMessage(text=progress_report),
-        TemplateSendMessage(alt_text="Learning Progress Options", template=buttons_template)
+        TemplateSendMessage(alt_text="LearningProgress Options", template=buttons_template)
     ]
 
 def show_main_menu():
@@ -2171,10 +2171,10 @@ def show_main_menu():
         items=[
             QuickReplyButton(action=MessageAction(label='Select Topic', text='Select Topic')),
             QuickReplyButton(action=MessageAction(label='Vocabulary', text='Vocabulary')),
-            QuickReplyButton(action=MessageAction(label='Pronunciation Practice', text='Pronunciation Practice')),
+            QuickReplyButton(action=MessageAction(label='Pronunciation drill', text='Pronunciation drill')),
             QuickReplyButton(action=MessageAction(label='Tone Learning', text='Tone Learning')),
-            QuickReplyButton(action=MessageAction(label='Memory Game', text='Start Memory Game')),
-            QuickReplyButton(action=MessageAction(label='Learning Progress', text='Learning Progress')),
+            QuickReplyButton(action=MessageAction(label='Memory Game', text='Start MemoryGame')),
+            QuickReplyButton(action=MessageAction(label='LearningProgress', text='LearningProgress')),
              QuickReplyButton(action=MessageAction(label='Exam Mode', text='Exam Mode'))
         ]
     )
@@ -2426,7 +2426,7 @@ def handle_memory_game(user_id, message):
         )
         
         return TextSendMessage(
-          text="🎮 Memory Matching Game\n\nGame Rules:\n1. Flip the cards to find matching image and pronunciation pairs\n2. You have 1 minute and 30 seconds to complete the game\n3. The faster you finish, the better your rating\n\nPlease choose a topic to begin:",
+          text="🎮 Memory Card Game\n\nGame Rules:\n1. Flip the cards to find matching image and pronunciation pairs\n2. You have 1 minute and 30 seconds to complete the game\n3. The faster you finish, the better your rating\n\nPlease choose a topic to begin:",
             quick_reply=quick_reply
         )
     
@@ -2505,7 +2505,7 @@ def handle_memory_game(user_id, message):
                         text="Game over! Would you like to play again？",
                         quick_reply=QuickReply(
                             items=[
-                                QuickReplyButton(action=MessageAction(label='Play Again', text='Start Memory Game')),
+                                QuickReplyButton(action=MessageAction(label='Play Again', text='Start MemoryGame')),
                                 QuickReplyButton(action=MessageAction(label='Back to Main Menu', text='Back to Main Menu'))
                             ]
                         )
@@ -2537,7 +2537,7 @@ def handle_memory_game(user_id, message):
         return TextSendMessage(text="Sorry, the audio could not be played.")
     
     # 默認回傳
-    return TextSendMessage(text="Please select 'Start Memory Game' to begin a new game.")
+    return TextSendMessage(text="Please select 'Start MemoryGame' to begin a new game.")
 
 def create_flex_memory_game(cards, game_state, user_id):
     """創建 Flex Message 的記憶翻牌遊戲界面"""
@@ -2791,7 +2791,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                 QuickReplyButton(action=MessageAction(label='Animals', text='Start Animals Exam')),
                 QuickReplyButton(action=MessageAction(label='Food', text='Start Food Exam')),
                 QuickReplyButton(action=MessageAction(label='Transportation', text='Start Transportation Exam')),
-                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Comprehensive Exam'))
+                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Full Exam'))
             ]
         )
         line_bot_api.reply_message(
