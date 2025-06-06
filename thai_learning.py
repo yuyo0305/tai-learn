@@ -43,7 +43,7 @@ speaker_model = SpeakerRecognition.from_hparams(
 )
 
 def compute_similarity(audio1_path, audio2_path):
-    """回傳兩段語音的相似度分數（0～1），使用 threading 處理超時"""
+    """Return similarity score (0~1) between two audio files, using threading for timeout handling"""
     try:
         # 使用 threading 處理超時
         import threading
@@ -78,11 +78,11 @@ def compute_similarity(audio1_path, audio2_path):
             waited += wait_step
         
         if not finished[0]:
-            logger.warning(f"SpeechBrain 處理超時 ({max_wait}秒)")
+            logger.warning(f"SpeechBrain processing timeout ({max_wait}s)")
             return 0.65  # 返回中等相似度作為預設值
         
         if error[0]:
-            logger.warning(f"相似度計算失敗: {error[0]}")
+            logger.warning(f"Similarity calculation failed: {error[0]}")
             return 0.65
             
         if result[0] is not None:
@@ -91,7 +91,7 @@ def compute_similarity(audio1_path, audio2_path):
         
         return 0.65
     except Exception as e:
-        logger.warning(f"相似度計算整體失敗: {str(e)}")
+        logger.warning(f"Overall similarity calculation failed: {str(e)}")
         return 0.65
 
 # 設置日誌
@@ -122,12 +122,12 @@ speech_region = os.environ.get('AZURE_SPEECH_REGION', 'eastasia')
 # Google Cloud Storage 設定
 GCS_BUCKET_NAME = os.environ.get('GCS_BUCKET_NAME', 'your-thai-learning-bucket')
 
-logger.info(f"初始化應用程式... LINE Bot, Azure Speech 和 GCS 服務已配置")
+logger.info(f"Initializing application... LINE Bot, Azure Speech and GCS services configured")
 
 # === Google Cloud Storage 輔助函數 ===
 
 def init_gcs_client():
-    """初始化 Google Cloud Storage 客戶端"""
+    """Initialize Google Cloud Storage client"""
     try:
         # 嘗試從環境變數獲取認證
         import json
@@ -146,7 +146,7 @@ def init_gcs_client():
                        
             # 使用後刪除臨時文件
             os.unlink(temp_file_name)
-            logger.info("使用環境變數 GCS_CREDENTIALS 成功初始化 Google Cloud Storage 客戶端")
+            logger.info("Successfully initialized Google Cloud Storage client using GCS_CREDENTIALS environment variable")
             return storage_client
             
         # 2. 嘗試使用本地金鑰文件 (本地開發使用)
@@ -158,20 +158,20 @@ def init_gcs_client():
             
         # 3. 嘗試使用默認認證
         storage_client = storage.Client()
-        logger.info("使用默認認證成功初始化 Google Cloud Storage 客戶端")
+        logger.info("Successfully initialized Google Cloud Storage client using default authentication")
         return storage_client
     
     except Exception as e:
-        logger.error(f"初始化 Google Cloud Storage 客戶端失敗: {str(e)}")
+        logger.error(f"Failed to initialize Google Cloud Storage client: {str(e)}")
         return None
 
 def upload_file_to_gcs(file_content, destination_blob_name, content_type=None):
-    """上傳檔案到 Google Cloud Storage 並返回公開 URL"""
+    """Upload file to Google Cloud Storage and return public URL"""
     try:
         # 初始化 GCS 客戶端
         storage_client = init_gcs_client()
         if not storage_client:
-            logger.error("無法初始化 GCS 客戶端")
+            logger.error("Unable to initialize GCS client")
             return None
             
         # 獲取 bucket
@@ -196,21 +196,21 @@ def upload_file_to_gcs(file_content, destination_blob_name, content_type=None):
         blob.make_public()
         
         # 返回公開 URL
-        logger.info(f"成功上傳檔案至 {destination_blob_name}, URL: {blob.public_url}")
+        logger.info(f"Successfully uploaded file to {destination_blob_name}, URL: {blob.public_url}")
         return blob.public_url
         
     except Exception as e:
-        logger.error(f"上傳檔案到 GCS 時發生錯誤: {str(e)}")
+        logger.error(f"Error uploading file to GCS: {str(e)}")
         return None
 
 # 測試 Azure 語音服務連接
 def test_azure_connection():
-    """測試 Azure 語音服務連接"""
+    """Test Azure Speech Services connection"""
     try:
         speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
-        logger.info("Azure Speech Services 連接測試成功")
+        logger.info("Azure Speech Services connection test successful")
     except Exception as e:
-        logger.error(f"Azure Speech Services 連接測試失敗: {str(e)}")
+        logger.error(f"Azure Speech Services connection test failed: {str(e)}")
 
 # 在模組層級調用這個函數
 test_azure_connection()
@@ -223,15 +223,15 @@ def callback():
         signature = request.headers.get('X-Line-Signature', '')
         body = request.get_data(as_text=True)
         
-        logger.info(f"收到回調，簽名: {signature}")
-        logger.info(f"回調內容: {body}")
+        logger.info(f"Received callback, signature: {signature}")
+        logger.info(f"Callback content: {body}")
         
         # 檢查是否為重複事件
         data = json.loads(body)
         if 'events' in data and len(data['events']) > 0:
             event_id = data['events'][0].get('webhookEventId', '')
             if event_id and event_id in processed_events:
-                logger.warning(f"收到重複事件 ID: {event_id}，忽略處理")
+                logger.warning(f"Received duplicate event ID: {event_id}，ignoring")
                 return 'OK'
                 
             # 記錄已處理的事件
@@ -248,10 +248,10 @@ def callback():
         
         handler.handle(body, signature)
     except InvalidSignatureError as e:
-        logger.error(f"簽名驗證失敗: {str(e)}")
+        logger.error(f"Signature verification failed: {str(e)}")
         abort(400)
     except Exception as e:
-        logger.error(f"處理回調時發生未知錯誤: {str(e)}")
+        logger.error(f"Unknown error occurred while processing callback: {str(e)}")
         abort(500)
     
     return 'OK'
@@ -263,14 +263,13 @@ class UserData:
         self.users = {}
         # 添加臨時用戶數據存儲
         self.users['temp'] = {'game_state': {}}
-        logger.info("初始化用戶數據管理器")
+        logger.info("Initialized user data manager")
         # 在實際應用中，應該使用資料庫存儲這些數據
-        logger.info("初始化用戶數據管理器")
         
     def get_user_data(self, user_id):
         """獲取用戶數據，如果不存在則初始化"""
         if user_id not in self.users:
-            logger.info(f"為新用戶創建數據: {user_id}")
+            logger.info(f"Creating data for new user: {user_id}")
             self.users[user_id] = {
                 'score': 0,
                 'current_activity': None,
@@ -285,21 +284,21 @@ class UserData:
         return self.users[user_id]
     
     def current_date(self):
-        """獲取當前日期，便於追蹤學習進度"""
+        """Get current date for tracking learning progress"""
         return datetime.now().strftime("%Y-%m-%d")
     
     def update_streak(self, user_id):
-        """更新用戶的連續學習天數"""
+        """Update user's consecutive learning days"""
         user_data = self.get_user_data(user_id)
         last_active = datetime.strptime(user_data['last_active'], "%Y-%m-%d")
         today = datetime.now()
         
         if (today - last_active).days == 1:  # 連續下一天學習
             user_data['streak'] += 1
-            logger.info(f"用戶 {user_id} 連續學習天數增加到 {user_data['streak']} 天")
+            logger.info(f"User {user_id}  learning streak increased to  {user_data['streak']} days")
         elif (today - last_active).days > 1:  # 中斷了連續學習
             user_data['streak'] = 1
-            logger.info(f"用戶 {user_id} 連續學習中斷，重置為 1 天")
+            logger.info(f"User {user_id} learning streak interrupted, reset to 1 day")
         # 如果是同一天，streak保持不變
         
         user_data['last_active'] = self.current_date()
@@ -356,7 +355,7 @@ thai_data = {
         'You are Welcome': {'thai': 'ไม่เป็นไร', 'pronunciation': 'mai-pen-rai', 'tone': 'mid-mid-mid',
                 'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E4%B8%8D%E5%AE%A2%E6%B0%A3.mp3',
                 'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/welcome.jpg'},
-        'How to Get There？': {'thai': 'ไปทางไหน', 'pronunciation': 'pai-tang-nai', 'tone': 'mid-mid-mid',
+        'How to Get There': {'thai': 'ไปทางไหน', 'pronunciation': 'pai-tang-nai', 'tone': 'mid-mid-mid',
                 'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E6%80%8E%E9%BA%BC%E8%B5%B0.mp3',
                 'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/how%20can%20i%20go%20to.jpg'},
         'How Much?': {'thai': 'เท่าไหร่', 'pronunciation': 'tao-rai', 'tone': 'mid-mid',
@@ -536,7 +535,7 @@ logger.info("已載入泰語學習資料")
 # === 輔助函數 ===
 def get_audio_content(message_id):
     """從LINE取得音訊內容"""
-    logger.info(f"獲取音訊內容，訊息ID: {message_id}")
+    logger.info(f"Getting audio content, message ID: {message_id}")
     message_content = line_bot_api.get_message_content(message_id)
     audio_content = b''
     for chunk in message_content.iter_content():
@@ -558,12 +557,12 @@ def process_audio_content_with_gcs(audio_content, user_id):
         temp_m4a = os.path.join(audio_dir, f'temp_{audio_id}.m4a')
         temp_wav = os.path.join(audio_dir, f'temp_{audio_id}.wav')
         
-        logger.info(f"保存原始音頻到 {temp_m4a}")
+        logger.info(f"Saving original audio to {temp_m4a}")
         # 保存原始音頻
         with open(temp_m4a, 'wb') as f:
             f.write(audio_content)
         
-        logger.info("使用 pydub 轉換音頻格式")
+        logger.info("Converting audio format using pydub")
         # 使用 pydub 轉換格式
         audio = AudioSegment.from_file(temp_m4a)
         audio = audio.set_frame_rate(16000).set_channels(1)
@@ -571,10 +570,10 @@ def process_audio_content_with_gcs(audio_content, user_id):
         
         # 確認 WAV 檔案已成功創建
         if not os.path.exists(temp_wav):
-            logger.error(f"WAV 檔案創建失敗: {temp_wav}")
+            logger.error(f"WAV file creation failed: {temp_wav}")
             return None, None
             
-        logger.info(f"音頻轉換成功，WAV 檔案路徑: {temp_wav}")
+        logger.info(f"Audio conversion successful, WAV file path: {temp_wav}")
             
         # 上傳到 GCS
         gcs_path = f"user_audio/{audio_id}.wav"
@@ -586,46 +585,46 @@ def process_audio_content_with_gcs(audio_content, user_id):
         # 清除臨時文件（不要清除 temp_wav，因為後續需要使用）
         try:
             os.remove(temp_m4a)
-            logger.info(f"已清除臨時文件 {temp_m4a}")
+            logger.info(f"Temporary file removed {temp_m4a}")
         except Exception as e:
-            logger.warning(f"清除臨時文件失敗: {str(e)}")
+            logger.warning(f"Failed to remove temporary file: {str(e)}")
             pass
         
         # 如果 GCS 上傳失敗，返回本地路徑仍舊有效
         return public_url, temp_wav
     except Exception as e:
-        logger.error(f"音頻處理錯誤: {str(e)}")
+        logger.error(f"Audio processing error: {str(e)}")
         return None, None
     
     
 def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改為空字符串
     """使用Azure Speech Services進行發音評估"""
     try:
-        logger.info(f"開始發音評估，參考文本: {reference_text}, 音頻檔案: {audio_file_path}")
+        logger.info(f"Starting pronunciation evaluation, reference text: {reference_text}, audio file: {audio_file_path}")
         
         # 確認檔案存在
         if not os.path.exists(audio_file_path):
-            logger.error(f"音頻檔案不存在: {audio_file_path}")
+            logger.error(f"Audio file not found: {audio_file_path}")
             return {
                 "success": False,
-                "error": f"音頻檔案不存在: {audio_file_path}"
+                "error": f"Audio file not found: {audio_file_path}"
             }
             
         # 檢查檔案大小
         file_size = os.path.getsize(audio_file_path)
-        logger.info(f"音頻檔案大小: {file_size} 字節")
+        logger.info(f"Audio file size: {file_size} bytes")
         if file_size == 0:
-            logger.error("音頻檔案為空")
+            logger.error("Audio file is empty")
             return {
                 "success": False,
-                "error": "音頻檔案為空"
+                "error": "Audio file is empty"
             }
             
         # 設定語音配置
         speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
         speech_config.speech_recognition_language = language
         
-        logger.info("已設置 Speech Config")
+        logger.info("Speech Config set up")
         
         # 設定發音評估配置
         pronunciation_config = speechsdk.PronunciationAssessmentConfig(
@@ -635,14 +634,14 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
             enable_miscue=True
         )
         
-        logger.info("已設置發音評估配置")
+        logger.info("Pronunciation assessment config set up")
         
         # 設定音訊輸入 - 使用絕對路徑
         abs_path = os.path.abspath(audio_file_path)
-        logger.info(f"音頻檔案絕對路徑: {abs_path}")
+        logger.info(f"Audio file absolute path: {abs_path}")
         audio_config = speechsdk.audio.AudioConfig(filename=abs_path)
         
-        logger.info("已設置音訊輸入配置")
+        logger.info("Audio input config set up")
         
         # 創建語音識別器
         speech_recognizer = speechsdk.SpeechRecognizer(
@@ -650,7 +649,7 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
             audio_config=audio_config
         )
         
-        logger.info("已創建語音識別器")
+        logger.info("Speech recognizer created")
         
         # 設置錯誤回調以獲取更詳細的錯誤信息
         done = False
@@ -663,9 +662,9 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
             nonlocal done, error_details
             logger.info(f"CANCELED: {evt}")
             if evt.reason == speechsdk.CancellationReason.Error:
-                logger.error(f"錯誤碼: {evt.error_code}")
-                logger.error(f"錯誤詳情: {evt.error_details}")
-                error_details = f"錯誤碼: {evt.error_code}, 錯誤詳情: {evt.error_details}"
+                logger.error(f"Error code: {evt.error_code}")
+                logger.error(f"Error details: {evt.error_details}")
+                error_details = f"Error code: {evt.error_code}, Error details: {evt.error_details}"
             done = True
         
         # 添加回調
@@ -716,17 +715,17 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
                     if cancellation.reason == speechsdk.CancellationReason.Error:
                         # 安全地訪問屬性
                         if hasattr(cancellation, 'error_code'):
-                            detail_info += f"錯誤碼: {cancellation.error_code}"
+                            detail_info += f"Error code: {cancellation.error_code}"
                         if hasattr(cancellation, 'error_details'):
-                            detail_info += f", 錯誤詳情: {cancellation.error_details}"
+                            detail_info += f", Error details: {cancellation.error_details}"
                         logger.error(detail_info)
                     else:
-                        detail_info = f"取消原因: {cancellation_reason}"
+                        detail_info = f"Cancellation reason: {cancellation_reason}"
                 
                 logger.warning(f"Speech recognition failed. Reason: {result.reason}, Details: {detail_info or 'No additional information'}")
                 
                 # 鑑於 Azure 似乎不支援泰語的發音評估，使用模擬評估
-                logger.info("切換到模擬評估模式")
+                logger.info("Switching to simulated assessment mode")
                 return simulate_pronunciation_assessment(audio_file_path, reference_text)
             
             except Exception as e:
@@ -775,7 +774,7 @@ def speech_to_text_google(audio_file_path):
         
         # 檢查檔案是否存在
         if not os.path.exists(audio_file_path):
-            logger.error(f"音頻檔案不存在: {audio_file_path}")
+            logger.error(f"Audio file not found: {audio_file_path}")
             return None
             
         # 讀取音頻文件
@@ -792,7 +791,7 @@ def speech_to_text_google(audio_file_path):
         response = client.recognize(config=config, audio=audio)
         
         if not response.results:
-            logger.warning("無法識別音頻內容")
+            logger.warning("Unable to recognize audio content")
             return None
             
         transcript = response.results[0].alternatives[0].transcript
@@ -807,7 +806,7 @@ def evaluate_pronunciation_google(public_url, reference_text):
     try:
         # 將公開網址轉換為 GCS 格式
         gcs_path = public_url.replace("https://storage.googleapis.com/", "gs://")
-        logger.info(f"🎯 Google STT 使用音檔：{gcs_path}")
+        logger.info(f"🎯 Google STT using audio file：{gcs_path}")
 
         client = init_google_speech_client()
 
@@ -925,7 +924,7 @@ def score_image_choice(user_choice, correct_answer):
 if not firebase_admin._apps:
     creds_json = os.environ.get("FIREBASE_CREDENTIALS")
     if not creds_json:
-        raise ValueError("❌ 沒有找到 FIREBASE_CREDENTIALS 環境變數")
+        raise ValueError("❌  FIREBASE_CREDENTIALS environment variable not found")
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
         tmp.write(creds_json.encode("utf-8"))
@@ -959,7 +958,7 @@ def load_progress(user_id):
 
 def get_audio_content_with_gcs(message_id, user_id):
     """從LINE取得音訊內容並存儲到 GCS"""
-    logger.info(f"獲取音訊內容，訊息ID: {message_id}")
+    logger.info(f"Getting audio content, message ID: {message_id}")
     try:
         message_content = line_bot_api.get_message_content(message_id)
         audio_content = b''
@@ -972,7 +971,7 @@ def get_audio_content_with_gcs(message_id, user_id):
         public_url, temp_file = process_audio_content_with_gcs(audio_content, user_id)
         
         if not public_url:
-            logger.warning("GCS 上傳失敗，但本地文件可能仍然可用")
+            logger.warning("GCS upload failed, but local file may still be available")
         
         if not temp_file:
             logger.error("音頻處理失敗，無法獲取本地文件路徑")
@@ -1209,7 +1208,7 @@ def handle_audio_message(event):
                     import signal
                     
                     def timeout_handler(signum, frame):
-                        raise TimeoutError("SpeechBrain處理超時")
+                        raise TimeoutError("SpeechBrain processing timeout")
                     
                     # 設置15秒超時
                     signal.signal(signal.SIGALRM, timeout_handler)
@@ -1432,21 +1431,21 @@ def handle_audio_message(event):
                             score = int(similarity_score * 100)
                             is_correct = similarity_score >= 0.5
                             method = "SpeechBrain"
-                            feedback_text = f"✅ 發音評分：{score}/100\n發音相似度為 {similarity_score:.2f}，{'非常接近標準發音' if is_correct else '需要再多練習'}！"
-                            logger.info(f"音頻相似度: {similarity_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                            feedback_text = f"✅ Pronunciation Score：{score}/100\nPronunciation similarity{similarity_score:.2f}，{'Very close to standard pronunciation' if is_correct else 'Needs more practice'}！"
+                            logger.info(f"Audio similarity: {similarity_score},  Evaluation result: {'Correct' if is_correct else 'Incorrect'}")
                         else:
-                            raise ValueError("參考音頻檔案為空")
+                            raise ValueError("Reference audio file is empty")
                         
                         # 清理參考音頻臨時檔案
                         try:
                             os.remove(ref_audio_path)
-                            logger.info(f"已移除參考音頻臨時檔: {ref_audio_path}")
+                            logger.info(f"Reference audio temporary file removed: {ref_audio_path}")
                         except:
                             pass
                     else:
-                        raise ValueError(f"無法下載參考音頻，狀態碼: {response.status_code}")
+                        raise ValueError(f"Unable to download reference audio, status code: {response.status_code}")
                 else:
-                    raise ValueError("無法找到參考音頻URL")
+                    raise ValueError("Unable to find reference audio URL")
                     
             except Exception as e2:
                 # 取消超時（如果有設置）
@@ -1455,22 +1454,22 @@ def handle_audio_message(event):
                 except:
                     pass
                     
-                logger.warning(f"Step 2 失敗，進入最終 Step 3: {str(e2)}")
+                logger.warning(f"Step 2 failed, proceeding to final Step 3: {str(e2)}")
                 
                 # ==== Step 3: 模擬分數 (Fallback) ====
-                logger.info(f"Step 3: 使用模擬評分")
+                logger.info(f"Step 3: Using simulated scoring")
                 simulated_score = random.randint(40, 80)
                 score = simulated_score
                 is_correct = simulated_score >= 60
-                method = "AI 評估"
-                feedback_text = f"✅ 發音評分：{simulated_score}/100\n回饋：發音{('清晰，繼續保持' if simulated_score >= 80 else '良好，有進步空間')}！"
-                logger.info(f"模擬分數: {simulated_score}, 評判結果: {'正確' if is_correct else '錯誤'}")
+                method = "AI  Evaluation"
+                feedback_text = f"✅ Pronunciation Score：{simulated_score}/100\nFeedback: Pronunciation{('is clear, keep it up' if simulated_score >= 80 else 'is good, with room for improvement')}！"
+                logger.info(f"Simulated score: {simulated_score}, Evaluation result: {'Correct' if is_correct else 'Incorrect'}")
         
         finally:
             # 清理臨時音頻檔案
             if audio_file_path and os.path.exists(audio_file_path):
                 os.remove(audio_file_path)
-                logger.info(f"已移除臨時音頻檔: {audio_file_path}")
+                logger.info(f"Temporary audio file removed: {audio_file_path}")
         
         # 儲存評估結果到 Firebase
         save_progress(user_id, current_vocab, score)
@@ -1527,10 +1526,10 @@ def handle_text_message(event):
     user_data = user_data_manager.get_user_data(user_id)
     text = event.message.text
     
-    logger.info(f"收到用戶 {user_id} 的文字訊息: {text}")
+    logger.info(f"Received text message from user {user_id}: {text}")
     
     # 考試指令過濾（包括「跳過」指令）
-    if text.startswith("開始") and "考" in text or text == "跳過" or (user_id in exam_sessions and exam_sessions[user_id]["questions"][exam_sessions[user_id]["current"]]["type"] == "audio_choice"):
+    if text.startswith("Start") and "Exam" in text or text == "Skip" or (user_id in exam_sessions and exam_sessions[user_id]["questions"][exam_sessions[user_id]["current"]]["type"] == "audio_choice"):
         result = handle_exam_message(event)
         if result:
             if isinstance(result, list):
@@ -1543,24 +1542,24 @@ def handle_text_message(event):
     user_data_manager.update_streak(user_id)
 
     # 記憶遊戲相關指令
-    if text == "開始記憶遊戲" or text.startswith("記憶遊戲主題:") or text.startswith("翻牌:") or text.startswith("已翻開:"):
+    if text == "Start Memory Game" or text.startswith("Memory Game Topic:") or text.startswith("Flip:") or text.startswith("Flipped:"):
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
     # 記憶遊戲中的播放音頻請求
-    elif text.startswith("播放音頻:") and 'game_state' in user_data and 'memory_game' in user_data['game_state']:
+    elif text.startswith("Play Audio:") and 'game_state' in user_data and 'memory_game' in user_data['game_state']:
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
     # 一般播放音頻請求
-    elif text.startswith("播放音頻:"):
+    elif text.startswith("Play Audio:"):
         word = text[5:]  # 提取詞彙
-        logger.info(f"用戶請求播放音頻: {word}")
+        logger.info(f"User requested to play audio: {word}")
         
         if word in thai_data['basic_words']:
             word_data = thai_data['basic_words'][word]
             if 'audio_url' in word_data and word_data['audio_url']:
-                logger.info(f"播放詞彙音頻: {word} - {word_data['audio_url']}")
+                logger.info(f"Playing vocabulary audio: {word} - {word_data['audio_url']}")
                 try:
                     line_bot_api.reply_message(
                         event.reply_token,
@@ -1593,24 +1592,24 @@ def handle_text_message(event):
             return
     
     # 主選單與基本導航
-    if text == "Start Learning" or text == "返回主選單":
+    if text == "Start Learning" or text == "Back to Main Menu":
         exam_sessions.pop(user_id, None)  # ❗️清除考試狀態，避免干擾
         line_bot_api.reply_message(event.reply_token, show_main_menu())
     
     # 選擇主題
-    elif text == "選擇主題":
+    elif text == "Select Topic":
         line_bot_api.reply_message(event.reply_token, show_category_menu())
     
     # 主題選擇處理
-    elif text.startswith("主題:"):
+    elif text.startswith("Topic:"):
         category = text[3:]  # 取出主題名稱
         # 轉換成英文鍵值
         category_map = {
-            "日常用語": "daily_phrases",
-            "數字": "numbers",
-            "動物": "animals",
-            "食物": "food",
-            "交通工具": "transportation"
+            "Daily Phrases": "daily_phrases",
+            "Numbers": "numbers",
+            "Animals": "animals",
+            "Food": "food",
+            "Transportation": "transportation"
         }
         if category in category_map:
             eng_category = category_map[category]
@@ -1649,11 +1648,11 @@ def handle_text_message(event):
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "學習進度":
+    elif text == "Learning Progress":
         progress_message = show_learning_progress(user_id)
         line_bot_api.reply_message(event.reply_token, progress_message)
     
-    elif text == "練習弱點":
+    elif text == "Practice Weak Points":
         # 找出評分最低的詞彙進行練習
         if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
             line_bot_api.reply_message(
@@ -1685,7 +1684,7 @@ def handle_text_message(event):
             event.reply_token,
             TextSendMessage(text=calendar_message)
         )
-    elif text == "考試模式":
+    elif text == "Exam Mode":
         quick_reply = QuickReply(
             items=[
                 QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Start Daily Phrases Exam')),
@@ -1716,14 +1715,14 @@ def handle_exam_message(event):
     message_text = event.message.text.strip()
 
     # 啟動考試
-    if message_text == "開始綜合考試":
+    if message_text == "Start Full Exam" or message_text == "Start Full Exam":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data),
             "current": 0,
             "correct": 0
         }
         return send_exam_question(user_id)
-    if message_text == "開始數字考試":
+    if message_text == "Start Numbers Exam"or message_text == "Start Numbers Exam":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="numbers"),
             "current": 0,
@@ -1731,7 +1730,7 @@ def handle_exam_message(event):
         }
         return send_exam_question(user_id)
 
-    if message_text == "開始動物考試":
+    if message_text == "Start Animals Exam"or message_text == "Start Animals Exam":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="animals"),
             "current": 0,
@@ -1739,7 +1738,7 @@ def handle_exam_message(event):
         }
         return send_exam_question(user_id)
 
-    if message_text == "開始食物考試":
+    if message_text == "Start Food Exam"or message_text == "Start Food Exam":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="food"),
             "current": 0,
@@ -1747,7 +1746,7 @@ def handle_exam_message(event):
         }
         return send_exam_question(user_id)
 
-    if message_text == "開始交通工具考試":
+    if message_text == "Start Transportation Exam"or message_text == "Start Transportation Exam":
         exam_sessions[user_id] = {
             "questions": generate_exam(thai_data, category="transportation"),
             "current": 0,
@@ -1756,9 +1755,9 @@ def handle_exam_message(event):
         return send_exam_question(user_id)
         
     # 處理「跳過」指令
-    if message_text == "跳過" and user_id in exam_sessions:
+    if (message_text == "Skip" or message_text == "Skip") and user_id in exam_sessions:
         session = exam_sessions[user_id]
-        logger.info(f"用戶 {user_id} 選擇跳過當前題目")
+        logger.info(f"User {user_id} chose to skip current question")
         
         # 直接跳到下一題
         session["current"] += 1
@@ -1808,7 +1807,7 @@ def handle_exam_message(event):
         score = session["correct"]
 
         # 儲存考試結果到 Firebase
-        save_exam_result(user_id, score, total, exam_type="綜合考試")
+        save_exam_result(user_id, score, total, exam_type="Full Exam")
 
         del exam_sessions[user_id]
         
@@ -1839,7 +1838,7 @@ def handle_exam_message(event):
 def send_exam_question(user_id):
     # 檢查用戶是否在考試狀態
     if user_id not in exam_sessions:
-        logger.error(f"用戶 {user_id} 不在考試狀態中，無法發送題目")
+        logger.error(f"User {user_id} is not in exam state, cannot send question")
         return TextSendMessage(text="Exam status error. Please restart the exam.")
     
     try:
@@ -1848,12 +1847,12 @@ def send_exam_question(user_id):
         
         # 檢查session是否包含必要的信息
         if "questions" not in session or "current" not in session:
-            logger.error(f"考試狀態不完整: {session}")
+            logger.error(f"Incomplete exam state: {session}")
             return TextSendMessage(text="Incomplete exam status. Please restart the exam.")
         
         # 檢查索引是否有效
         if session["current"] >= len(session["questions"]):
-            logger.error(f"題目索引超出範圍: {session['current']}/{len(session['questions'])}")
+            logger.error(f"Question index out of range: {session['current']}/{len(session['questions'])}")
             return TextSendMessage(text="You have completed all the questions. The exam is now finished.")
         
         # 從這裡開始是原有代碼
@@ -1901,15 +1900,15 @@ def send_exam_question(user_id):
                 )
             ]
         else:
-            logger.error(f"未知的題型: {question['type']}")
+            logger.error(f"Unknown question type: {question['type']}")
             return TextSendMessage(text="Invalid question type. Please skip this question.")
             
     except Exception as e:
         # 捕獲任何可能發生的錯誤
-        logger.error(f"生成考試題目時發生錯誤: {str(e)}")
+        logger.error(f"Error occurred while generating exam question: {str(e)}")
         return TextSendMessage(text="An error occurred while generating the question. Please restart the exam.")
 #=== 考試結果儲存 ===    
-def save_exam_result(user_id, score, total, exam_type="綜合考試"):
+def save_exam_result(user_id, score, total, exam_type="Full Exam"):
     ref = db.collection("users").document(user_id).collection("exams").document()
     ref.set({
         "exam_type": exam_type,
@@ -1917,14 +1916,14 @@ def save_exam_result(user_id, score, total, exam_type="綜合考試"):
         "total": total,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
-    logger.info(f"✅ 用戶 {user_id} 考試結果已儲存：{score}/{total}")
+    logger.info(f"✅ User {user_id} exam result saved:{score}/{total}")
      
         # === 第四部分：學習功能模塊 ===
 
 # === 學習功能和選單 ===
 def show_category_menu():
     """顯示主題選單"""
-    logger.info("顯示主題選單")
+    logger.info("Displaying topic menu")
     
     quick_reply = QuickReply(
         items=[
@@ -1943,7 +1942,7 @@ def show_category_menu():
 
 def start_image_learning(user_id, category=None):
     """啟動圖像詞彙學習模式"""
-    logger.info(f"啟動圖像詞彙學習模式，用戶ID: {user_id}")
+    logger.info(f"Starting image vocabulary learning mode, User ID: {user_id}")
     user_data = user_data_manager.get_user_data(user_id)
     user_data['current_activity'] = 'image_learning'
     
@@ -1965,7 +1964,7 @@ def start_image_learning(user_id, category=None):
     
     user_data['current_vocab'] = word_key
     word_data = thai_data['basic_words'][word_key]
-    logger.info(f"選擇詞彙: {word_key}, 泰語: {word_data['thai']}")
+    logger.info(f"Selected vocabulary: {word_key}, Thai: {word_data['thai']}")
     
     # 建立訊息列表
     message_list = []
@@ -2004,7 +2003,7 @@ def start_image_learning(user_id, category=None):
 
 def start_echo_practice(user_id):
     """啟動回音法發音練習"""
-    logger.info(f"啟動回音法發音練習，用戶ID: {user_id}")
+    logger.info(f"Starting echo method pronunciation practice, User ID: {user_id}")
     user_data = user_data_manager.get_user_data(user_id)
     user_data['current_activity'] = 'echo_practice'
 
@@ -2021,7 +2020,7 @@ def start_echo_practice(user_id):
     
     word_key = user_data['current_vocab']
     word_data = thai_data['basic_words'][word_key]
-    logger.info(f"發音練習詞彙: {word_key}, 泰語: {word_data['thai']}")
+    logger.info(f"Pronunciation practice vocabulary: {word_key}, Thai: {word_data['thai']}")
     
     # 建立訊息列表
     message_list = []
@@ -2069,14 +2068,14 @@ def start_echo_practice(user_id):
     )
     message_list.append(
 
-        TemplateSendMessage(alt_text="發音練習", template=buttons_template)
+        TemplateSendMessage(alt_text="Pronunciation Practice", template=buttons_template)
     )
     
     return message_list
 
 def start_tone_learning(user_id):
     """啟動音調學習模式"""
-    logger.info(f"啟動音調學習模式，用戶ID: {user_id}")
+    logger.info(f"Starting tone learning mode, User ID: {user_id}")
     user_data = user_data_manager.get_user_data(user_id)
     user_data['current_activity'] = 'tone_learning'
     
@@ -2096,7 +2095,7 @@ def start_tone_learning(user_id):
     )
     
     # 提供音調例子
-    examples_text = "音調例子：\n\n"
+    examples_text = "Tone Examples：\n\n"
     for example in thai_data['tone_examples']:
         examples_text += f"{example['thai']} - {example['meaning']} - {example['pronunciation']} ({example['tone']}調)\n"
     
@@ -2113,14 +2112,14 @@ def start_tone_learning(user_id):
         ]
     )
     message_list.append(
-        TemplateSendMessage(alt_text="音調學習選項", template=buttons_template)
+        TemplateSendMessage(alt_text="Tone Learning Options", template=buttons_template)
     )
     
     return message_list
 
 def show_learning_progress(user_id):
     """從 Firebase 顯示用戶學習進度"""
-    logger.info(f"📊 顯示學習進度，用戶ID: {user_id}")
+    logger.info(f"📊 Displaying learning progress, User ID: {user_id}")
 
     # 從 Firestore 讀取進度
     progress = load_progress(user_id)
@@ -2164,7 +2163,7 @@ def show_learning_progress(user_id):
 
 def show_main_menu():
     """顯示主選單"""
-    logger.info("顯示主選單")
+    logger.info("Displaying main menu")
     
     # 使用 QuickReply 代替 ButtonsTemplate，因為 QuickReply 可以支援更多按鈕
     quick_reply = QuickReply(
@@ -2262,32 +2261,32 @@ class MemoryGame:
         self.end_time = None
         self.pending_reset = False
         
-        logger.info(f"初始化記憶翻牌遊戲，類別: {self.category}，卡片數量: {len(self.cards)}")
+        logger.info(f"Initialized memory card game, Category: {self.category}，Number of cards: {len(self.cards)}")
         return self.cards
     
     def flip_card(self, card_id):
         """翻轉卡片並檢查配對"""
         # 檢查是否需要重置先前不匹配的卡片
         if self.pending_reset:
-            logger.info("重置先前不匹配的卡片")
+            logger.info("Resetting previously unmatched cards")
             self.flipped_cards = []
             self.pending_reset = False
         
         # 尋找卡片
         card = next((c for c in self.cards if c['id'] == card_id), None)
         if not card:
-            logger.warning(f"找不到卡片 ID: {card_id}")
-            return None, "卡片不存在", False, None
+            logger.warning(f"Card not found ID: {card_id}")
+            return None, "Card does not exist", False, None
         
         # 檢查卡片是否已經配對
         if card_id in [c['id'] for pair in self.matched_pairs for c in pair]:
-            logger.warning(f"卡片 {card_id} 已經配對")
-            return self.get_game_state(), "卡片已經配對", False, None
+            logger.warning(f"Card{card_id} is already matched")
+            return self.get_game_state(), "Card is already matched", False, None
         
         # 檢查卡片是否已經翻轉
         if card_id in [c['id'] for c in self.flipped_cards]:
-            logger.warning(f"卡片 {card_id} 已經翻轉")
-            return self.get_game_state(), "卡片已經翻轉", False, None
+            logger.warning(f"Card {card_id}is already flipped")
+            return self.get_game_state(), "Card is already flipped", False, None
         
         # 添加到翻轉卡片列表
         self.flipped_cards.append(card)
@@ -2302,7 +2301,7 @@ class MemoryGame:
                 audio_url = thai_data['basic_words'][word]['audio_url']
         
         # 如果翻轉了兩張卡片，檢查是否匹配
-        result = "繼續遊戲"
+        result = "Continue game"
         if len(self.flipped_cards) == 2:
             self.attempts += 1
             card1, card2 = self.flipped_cards
@@ -2311,14 +2310,14 @@ class MemoryGame:
             if card1['match_id'] == card2['id'] and card2['match_id'] == card1['id']:
                 # 配對成功
                 self.matched_pairs.append(self.flipped_cards.copy())
-                result = f"配對成功！{card1['word']} - {card1['thai']}"
-                logger.info(f"卡片配對成功: {card1['id']} 和 {card2['id']}")
+                result = f"Match successful！{card1['word']} - {card1['thai']}"
+                logger.info(f"Cards matched successfully: {card1['id']} and {card2['id']}")
                 # 配對成功才清空翻轉卡片列表
                 self.flipped_cards = []
             else:
                 # 配對失敗 - 設置標記而不是立即清空翻轉卡片列表
-                result = "配對失敗，請再試一次"
-                logger.info(f"卡片配對失敗: {card1['id']} 和 {card2['id']}")
+                result = "Match failed, please try again"
+                logger.info(f"Cards match failed: {card1['id']} and {card2['id']}")
                 self.pending_reset = True
                 # 不要在這裡清空 self.flipped_cards，這樣卡片會保持翻開狀態
         
@@ -2326,15 +2325,15 @@ class MemoryGame:
         if len(self.matched_pairs) * 2 == len(self.cards):
             self.end_time = datetime.now()
             result = self.get_end_result()
-            logger.info("記憶翻牌遊戲結束")
+            logger.info("Memory card game finished")
         
         # 檢查是否超時
         elif self.start_time:
             elapsed_time = (datetime.now() - self.start_time).total_seconds()
             if elapsed_time > self.time_limit:
                 self.end_time = datetime.now()
-                result = "時間到！" + self.get_end_result()
-                logger.info("記憶翻牌遊戲超時")
+                result = "Time's up!" + self.get_end_result()
+                logger.info("Memory card game timed out")
         
         return self.get_game_state(), result, should_play_audio, audio_url
     
@@ -2369,7 +2368,7 @@ class MemoryGame:
     def get_end_result(self):
         """獲取遊戲結束結果"""
         if not self.end_time:
-            return "遊戲尚未結束"
+            return "Game not finished yet"
         
         duration = (self.end_time - self.start_time).total_seconds()
         pairs_count = len(self.cards) // 2
@@ -2379,21 +2378,21 @@ class MemoryGame:
         if duration > self.time_limit:
             # 超時情況
             if matched_count == pairs_count:
-                message = "雖然超時，但你找到了所有配對！"
-                level = "不錯的嘗試！"
+                message = "Although time is up, you found all the matches！"
+                level = "Nice try！"
             else:
-                message = f"時間到！你找到了 {matched_count}/{pairs_count} 組配對。"
-                level = "再接再厲！"
+                message = f"Time's up! You found {matched_count}/{pairs_count} pairs."
+                level = "Keep going！"
         else:
             # 未超時情況
             if duration < 30:  # 30秒內完成
-                level = "太棒了！你的記憶力超群！"
+                level = "Amazing! Your memory is outstanding!"
             elif duration < 60:  # 60秒內完成
-                level = "很好！你的記憶力很強！"
+                level = "Great! Your memory is very strong!"
             else:
-                level = "做得好！繼續練習能提高記憶力！"
+                level = "Well done! Keep practicing to improve your memory!"
                 
-            message = f"遊戲完成！\n配對數量: {matched_count}/{pairs_count} 組\n嘗試次數: {self.attempts} 次\n用時: {int(duration)} 秒"
+            message = f"Game completed!\nPairs found: {matched_count}/{pairs_count} pairs\nAttempts: {self.attempts} times\nTime taken: {int(duration)} seconds"
         
         return f"{message}\n{level}"
 
@@ -2413,7 +2412,7 @@ def handle_memory_game(user_id, message):
     game = user_data['game_state']['memory_game']
     
     # 處理遊戲指令
-    if message == "開始記憶遊戲":
+    if message == "Start Memory Game":
         # 顯示主題選單
         quick_reply = QuickReply(
             items=[
@@ -2430,27 +2429,28 @@ def handle_memory_game(user_id, message):
             quick_reply=quick_reply
         )
     
-    elif message.startswith("記憶遊戲主題:"):
+    elif message.startswith("Memory Game Topic" \
+    ":"):
         category = message.split(":", 1)[1] if ":" in message else ""
-        logger.info(f"收到記憶遊戲主題選擇: '{category}'")
+        logger.info(f"Received memory game topic selection: '{category}'")
         
         # 轉換成英文鍵值
         category_map = {
-            "日常用語": "daily_phrases",
-            "數字": "numbers",
-            "動物": "animals",
-            "食物": "food",
-            "交通工具": "transportation"
+            "Daily Phrases": "daily_phrases",
+            "Numbers": "numbers",
+            "Animals": "animals",
+            "Food": "food",
+            "Transportation": "transportation"
         }
-        logger.info(f"可用的主題映射: {list(category_map.keys())}")
+        logger.info(f"Available topic mapping: {list(category_map.keys())}")
         
         if category in category_map:
             eng_category = category_map[category]
-            logger.info(f"主題映射成功: {category} -> {eng_category}")
+            logger.info(f"Topic mapping successful: {category} -> {eng_category}")
             
             # 檢查 thai_data 是否包含該類別
             if eng_category in thai_data['categories']:
-                logger.info(f"在 thai_data 中找到類別 {eng_category}")
+                logger.info(f"Found category {eng_category}in thai_data")
                 # 初始化遊戲
                 cards = game.initialize_game(eng_category)
                 
@@ -2463,10 +2463,10 @@ def handle_memory_game(user_id, message):
             logger.warning(f"Unrecognized topic: {category}")
             return TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
     
-    elif message.startswith("翻牌:"):
+    elif message.startswith("Flip Card:"):
         try:
             card_id = int(message.split(":")[1]) if ":" in message else -1
-            logger.info(f"用戶點擊卡片號碼: {card_id}")
+            logger.info(f"User clicked card number: {card_id}")
             
             # 翻開卡片
             game_state, result, should_play_audio, audio_url = game.flip_card(card_id)
@@ -2485,7 +2485,7 @@ def handle_memory_game(user_id, message):
             
             # 如果需要播放音頻，添加音頻消息
             if should_play_audio and audio_url:
-                logger.info(f"準備播放音頻: {audio_url}")
+                logger.info(f"Preparing to play audio: {audio_url}")
                 messages.append(
                     AudioSendMessage(
                         original_content_url=audio_url,
@@ -2502,7 +2502,7 @@ def handle_memory_game(user_id, message):
                 # 遊戲結束或超時，顯示結果
                 messages.append(
                     TextSendMessage(
-                        text="Game over! Would you like to play again？",
+                        text="Game over! Would you like to play again",
                         quick_reply=QuickReply(
                             items=[
                                 QuickReplyButton(action=MessageAction(label='Play Again', text='Start MemoryGame')),
@@ -2513,10 +2513,10 @@ def handle_memory_game(user_id, message):
                 )
                 return messages
         except Exception as e:
-            logger.error(f"處理翻牌請求時發生錯誤: {str(e)}")
+            logger.error(f"Error occurred while processing card flip request: {str(e)}")
             return TextSendMessage(text=f"An error occurred while processing your card flip: {str(e)}\nPlease try again or select 'Back to Main Menu'.")
     
-    elif message.startswith("播放音頻:"):
+    elif message.startswith("Play Audio:"):
         word = message.split(":", 1)[1] if ":" in message else ""
         if word in thai_data['basic_words']:
             word_data = thai_data['basic_words'][word]
@@ -2547,7 +2547,7 @@ def create_flex_memory_game(cards, game_state, user_id):
     try:
         attempts = game_state.get('attempts', 0)
         remaining_time = int(game_state.get('remaining_time', 0))
-        category_name = game_state.get('category_name', '未知')
+        category_name = game_state.get('category_name', 'Unknown')
         is_completed = game_state.get('is_completed', False)
         is_timeout = game_state.get('is_timeout', False)
 
@@ -2561,7 +2561,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": "泰語記憶翻牌遊戲", "weight": "bold", "size": "xl", "color": "#ffffff"},
+                    {"type": "text", "text": "Thai Memory Card Game", "weight": "bold", "size": "xl", "color": "#ffffff"},
                     {"type": "text", "text": category_name, "size": "md", "color": "#ffffff"}
                 ],
                 "backgroundColor": "#4A86E8",
@@ -2576,8 +2576,8 @@ def create_flex_memory_game(cards, game_state, user_id):
                         "layout": "horizontal",
                         "justifyContent":"center",
                         "contents": [
-                            {"type": "text", "text": "⏱️ 剩餘時間:", "size": "sm", "color": "#555555", "flex": 2},
-                            {"type": "text", "text": f"{remaining_time} 秒", "size": "sm", "color": "#111111", "flex": 1}
+                            {"type": "text", "text": "⏱️Time Remaining:", "size": "sm", "color": "#555555", "flex": 2},
+                            {"type": "text", "text": f"{remaining_time} sec", "size": "sm", "color": "#111111", "flex": 1}
                         ]
                     }
                 ]
@@ -2624,7 +2624,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                                 {"type": "text", "text": "🎵", "size": "lg", "align": "center", "color": "#FF6B6E"},
                                 {"type": "text", "text": card['thai'], "size": "xxs", "align": "center", "wrap": True, "maxLines": 2}
                             ],
-                            "action": {"type": "message", "text": f"播放音頻:{card['word']}"}
+                            "action": {"type": "message", "text": f"Play Audio:{card['word']}"}
                         }
                 else:
                     back_icon = "🖼️" if card['type'] == "image" else "🎧"
@@ -2642,7 +2642,7 @@ def create_flex_memory_game(cards, game_state, user_id):
                             {"type": "text", "text": back_icon, "color": "#FFFFFF", "align": "center", "gravity": "center", "size": "xl"},
                             {"type": "text", "text": f"{card_id}", "color": "#FFFFFF", "align": "center", "size": "sm"}
                         ],
-                        "action": {"type": "message", "text": f"翻牌:{card_id}"}
+                        "action": {"type": "message", "text": f"Flip Card:{card_id}"}
                     }
 
                 card_contents.append(card_box)
@@ -2651,15 +2651,15 @@ def create_flex_memory_game(cards, game_state, user_id):
             bubbles.append(row_bubble)
 
         flex_message = {"type": "carousel", "contents": bubbles}
-        return FlexSendMessage(alt_text="泰語記憶翻牌遊戲", contents=flex_message)
+        return FlexSendMessage(alt_text="Thai Memory Card Game", contents=flex_message)
 
     except Exception as e:
         import logging
-        logging.getLogger().error(f"創建 Flex Message 時發生錯誤: {str(e)}")
+        logging.getLogger().error(f"Error occurred while creating Flex Message: {str(e)}")
         return TextSendMessage(text="The game display encountered an issue. Please try again later.")
 
     # ✅ 考試指令過濾（只有在符合格式才執行）
-    if text.startswith("開始") and "考" in text:
+    if text.startswith("Start") and "Exam" in text:
         result = handle_exam_message(event)
         if result:
             if isinstance(result, list):
@@ -2676,7 +2676,7 @@ def create_flex_memory_game(cards, game_state, user_id):
 
     
     # 播放音頻請求
-    if text.startswith("播放音頻:"):
+    if text.startswith("Play Audio:"):
         word = text[5:]  # 提取詞彙
         if word in thai_data['basic_words']:
             word_data = thai_data['basic_words'][word]
@@ -2691,24 +2691,24 @@ def create_flex_memory_game(cards, game_state, user_id):
                 return
     
     # 主選單與基本導航
-    if text == "開始學習" or text == "返回主選單":
+    if text == "Start Learning" or text == "Back to Main Menu":
         exam_sessions.pop(user_id, None)  # ❗️清除考試狀態，避免干擾
         line_bot_api.reply_message(event.reply_token, show_main_menu())
     
     # 選擇主題
-    elif text == "選擇主題":
+    elif text == "Select Topic":
         line_bot_api.reply_message(event.reply_token, show_category_menu())
     
     # 主題選擇處理
-    elif text.startswith("主題:"):
+    elif text.startswith("Topic:"):
         category = text[3:]  # 取出主題名稱
         # 轉換成英文鍵值
         category_map = {
-            "日常用語": "daily_phrases",
-            "數字": "numbers",
-            "動物": "animals",
-            "食物": "food",
-            "交通工具": "transportation"
+            "Daily Phrases": "daily_phrases",
+            "Numbers": "numbers",
+            "Animals": "animals",
+            "Food": "food",
+            "Transportation": "transportation"
         }
         if category in category_map:
             eng_category = category_map[category]
@@ -2722,20 +2722,20 @@ def create_flex_memory_game(cards, game_state, user_id):
             )
     
     # 學習模式選擇
-    elif text == "詞彙學習":
+    elif text == "Vocabulary":
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "練習發音":
+    elif text == "Pronunciation drill":
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "音調學習":
+    elif text == "Tone Learning":
         messages = start_tone_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
     # 進度與導航控制
-    elif text == "下一個詞彙":
+    elif text == "Next Word":
         # 如果有當前主題，在同一主題中選擇新詞彙
         if user_data.get('current_category'):
             category = user_data['current_category']
@@ -2747,11 +2747,11 @@ def create_flex_memory_game(cards, game_state, user_id):
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
     
-    elif text == "學習進度":
+    elif text == "Learning Progress":
         progress_message = show_learning_progress(user_id)
         line_bot_api.reply_message(event.reply_token, progress_message)
     
-    elif text == "練習弱點":
+    elif text == "Practice Weak Words":
         # 找出評分最低的詞彙進行練習
         if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
             line_bot_api.reply_message(
@@ -2783,7 +2783,7 @@ def create_flex_memory_game(cards, game_state, user_id):
             event.reply_token,
             TextSendMessage(text=calendar_message)
         )
-    elif text == "考試模式":
+    elif text == "Exam Mode":
         quick_reply = QuickReply(
             items=[
                 QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Start Daily Phrases Exam')),
@@ -2834,11 +2834,11 @@ def cleanup_temp_files():
                 if (now - mtime).total_seconds() > 3600:
                     try:
                         os.remove(file_path)
-                        logger.info(f"已清理臨時檔案: {file_path}")
+                        logger.info(f"Cleaned up temporary file: {file_path}")
                     except:
                         pass
     except Exception as e:
-        logger.error(f"清理臨時檔案失敗: {str(e)}")
+        logger.error(f"Failed to clean up temporary files: {str(e)}")
 
 # 背景執行清理：每 30 分鐘跑一次
 def periodic_cleanup():
@@ -2854,7 +2854,7 @@ cleanup_thread.start()
 if __name__ == "__main__":
     # 啟動 Flask 應用，使用環境變數設定的端口或默認5000
     port = int(os.environ.get('PORT', 5000))
-    logger.info(f"應用啟動在端口 {port}")
+    logger.info(f"Application started on port  {port}")
     app.run(host='0.0.0.0', port=port)
     
     
