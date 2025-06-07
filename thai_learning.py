@@ -15,7 +15,8 @@ from dotenv import load_dotenv
 import random
 from difflib import SequenceMatcher
 from linebot.models import TextSendMessage, ImageSendMessage, QuickReply, QuickReplyButton, MessageAction
-
+# 導入優化的記憶體管理 (添加到其他 import 之後)
+from speechbrain_manager import compute_similarity, cleanup_speechbrain, get_speechbrain_status
 
 
 from flask import Flask, request, abort
@@ -34,15 +35,15 @@ import difflib
 import tempfile
 
 
-from speechbrain.pretrained import SpeakerRecognition
+#from speechbrain.pretrained import SpeakerRecognition
 
 # ===== 初始化 SpeechBrain 模型 =====
-speaker_model = SpeakerRecognition.from_hparams(
-    source="speechbrain/spkrec-ecapa-voxceleb",
-    savedir="pretrained_models/spkrec"
-)
+#speaker_model = SpeakerRecognition.from_hparams(
+    #source="speechbrain/spkrec-ecapa-voxceleb",
+    #savedir="pretrained_models/spkrec"
+#)
 
-def compute_similarity(audio1_path, audio2_path):
+"""def compute_similarity(audio1_path, audio2_path):
     """Return similarity score (0~1) between two audio files, using threading for timeout handling"""
     try:
         # 使用 threading 處理超時
@@ -92,7 +93,7 @@ def compute_similarity(audio1_path, audio2_path):
         return 0.65
     except Exception as e:
         logger.warning(f"Overall similarity calculation failed: {str(e)}")
-        return 0.65
+        return 0.65"""
 
 # 設置日誌
 logging.basicConfig(
