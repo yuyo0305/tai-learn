@@ -44,7 +44,7 @@ import tempfile
 #)
 
 """def compute_similarity(audio1_path, audio2_path):
-    """Return similarity score (0~1) between two audio files, using threading for timeout handling"""
+        Return similarity score (0~1) between two audio files, using threading for timeout handling
     try:
         # 使用 threading 處理超時
         import threading
