@@ -1,4 +1,4 @@
-﻿# Flask 網頁框架
+# Flask 網頁框架
 flask==2.3.3
 gunicorn==21.2.0
 
@@ -10,11 +10,14 @@ azure-cognitiveservices-speech==1.31.0
 
 # Google Cloud 服務
 google-cloud-storage==2.12.0
-google-cloud-texttospeech==2.14.1
+google-cloud-speech>=2.0.0
+google-cloud-firestore>=2.13.0
+firebase-admin>=6.4.0
 
-# 基本工具
-requests==2.31.0
-python-dotenv==1.0.0
+# AI/ML 框架 (SpeechBrain 和 PyTorch)
+torch>=1.13.0
+torchaudio>=0.13.0
+speechbrain==0.5.16
 
 # 音頻處理
 pydub==0.25.1
@@ -22,15 +25,18 @@ numpy==1.26.3
 librosa==0.10.1
 soundfile==0.12.1
 
+# 系統監控和工具
+psutil==5.9.6
+requests==2.31.0
+python-dotenv==1.0.0
+
 # 日期時間處理
 pytz
 
-google-cloud-speech>=2.0.0
+# 數據處理 (用於相似度計算)
+difflib2
+scikit-learn>=1.3.0
 
-firebase-admin>=6.4.0
+google-cloud-texttospeech==2.14.1
 
-speechbrain==0.5.16
-torchaudio
-torch>=1.13.0
-psutil==5.9.6
 
