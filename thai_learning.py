@@ -353,7 +353,7 @@ thai_data = {
         'Good Night': {'thai': 'ราตรีสวัสดิ์', 'pronunciation': 'ra-tree-sa-wat', 'tone': 'mid-mid-falling-mid',
               'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E6%99%9A%E5%AE%89.mp3',
               'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/night.jpg'},
-        'You are Welcome': {'thai': 'ไม่เป็นไร', 'pronunciation': 'mai-pen-rai', 'tone': 'mid-mid-mid',
+        "You're Welcome": {'thai': 'ไม่เป็นไร', 'pronunciation': 'mai-pen-rai', 'tone': 'mid-mid-mid',
                 'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E4%B8%8D%E5%AE%A2%E6%B0%A3.mp3',
                 'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/welcome.jpg'},
         'How to Get There': {'thai': 'ไปทางไหน', 'pronunciation': 'pai-tang-nai', 'tone': 'mid-mid-mid',
@@ -1538,12 +1538,17 @@ def handle_text_message(event):
         else:
             line_bot_api.reply_message(event.reply_token, [result])
         return
-    
+    # 記憶遊戲優先處理
+    if text == "Start Memory Game" or text in ["Daily Phrases", "Numbers", "Animals", "Food", "Transportation"]:
+        if text == "Start Memory Game" or ('game_state' in user_data and 'memory_game' in user_data['game_state']):
+            game_response = handle_memory_game(user_id, text)
+            line_bot_api.reply_message(event.reply_token, game_response)
+            return
 # 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
 
     # 記憶遊戲相關指令
-    if text == "Start Memory Game" or text.startswith("Memory Game Topic:") or text.startswith("Flip:") or text.startswith("Flipped:"):
+    if text == "Start MemoryGame" or text.startswith("Memory Game Topic:") or text.startswith("Flip:") or text.startswith("Flipped:"):
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
@@ -1554,7 +1559,7 @@ def handle_text_message(event):
         return
     # 一般播放音頻請求
     elif text.startswith("Play Audio:"):
-        word = text[5:]  # 提取詞彙
+        word = text.split(":", 1)[1].strip() if ":" in text else ""
         logger.info(f"User requested to play audio: {word}")
         
         if word in thai_data['basic_words']:
@@ -1603,7 +1608,7 @@ def handle_text_message(event):
     
     # 主題選擇處理
     elif text.startswith("Topic:"):
-        category = text[3:]  # 取出主題名稱
+        category = text[7:]  # 取出主題名稱
         # 轉換成英文鍵值
         category_map = {
             "Daily Phrases": "daily_phrases",
@@ -2039,11 +2044,11 @@ def start_echo_practice(user_id):
     message_list.append(
         TextSendMessage(
             text="🧠【Echo Method for Pronunciation】\n\n"
-                 "1. Listen: Hear a Thai word.\n"
-                 "2. Echo：Pause for 3 seconds and replay the sound and tone in your mind.\n"
-                 "3. Mimic：Imitate the sound out loud from your internal echo.\n\n"
-                 f"📣 Practice Word：{word_data['thai']}\n"
-                 f"Pronunciation：{word_data['pronunciation']}\n\n"
+                 "1. Listen: Hear a Thai word.\n" 
+                 "2. Echo:Pause for 3 seconds and replay the sound and tone in your mind.\n"
+                 "3. Mimic:Imitate the sound out loud from your internal echo.\n\n"
+                 f"📣 Practice Word:{word_data['thai']}\n"
+                 f"Pronunciation:{word_data['pronunciation']}\n\n"
                  "Please tap the 🎤 microphone icon at the bottom to record your pronunciation."
     )
 )
@@ -2069,7 +2074,7 @@ def start_echo_practice(user_id):
     )
     message_list.append(
 
-        TemplateSendMessage(alt_text="Pronunciation Practice", template=buttons_template)
+        TemplateSendMessage(alt_text="Pronunciation drill", template=buttons_template)
     )
     
     return message_list
@@ -2174,7 +2179,7 @@ def show_main_menu():
             QuickReplyButton(action=MessageAction(label='Speaking', text='Pronunciation drill')),
             QuickReplyButton(action=MessageAction(label='Tone Learning', text='Tone Learning')),
             QuickReplyButton(action=MessageAction(label='Memory Game', text='Start MemoryGame')),
-            QuickReplyButton(action=MessageAction(label='LearningProgress', text='LearningProgress')),
+            QuickReplyButton(action=MessageAction(label='Progress', text='LearningProgress')),
              QuickReplyButton(action=MessageAction(label='Exam Mode', text='Exam Mode'))
         ]
     )
@@ -2659,17 +2664,37 @@ def create_flex_memory_game(cards, game_state, user_id):
         return TextSendMessage(text="The game display encountered an issue. Please try again later.")
 
     # ✅ 考試指令過濾（只有在符合格式才執行）
-    if text.startswith("Start") and "Exam" in text:
-        result = handle_exam_message(event)
-        if result:
-            if isinstance(result, list):
-                line_bot_api.reply_message(event.reply_token, result)
-        else:
-            line_bot_api.reply_message(event.reply_token, [result])
-        return
-
-
-
+    def handle_text_message_fixed_v1(event):
+        user_id = event.source.user_id
+        text = event.message.text.strip()
+    
+    # 精確定義考試指令，避免誤觸發
+        exam_commands = [
+            "Start Full Exam",
+            "Start Numbers Exam", 
+            "Start Animals Exam",
+            "Start Food Exam",
+            "Start Transportation Exam",
+            "Start Daily Phrases Exam"
+    ]
+    
+    # 考試指令處理
+        if text in exam_commands:
+            result = handle_exam_message(event)
+        
+        # 修正回覆邏輯
+            if result is not None:  # 確保result不是None
+                if isinstance(result, list):
+                    line_bot_api.reply_message(event.reply_token, result)
+                else:
+                    line_bot_api.reply_message(event.reply_token, [result])
+            else:
+            # 如果沒有結果，給予預設回應
+                line_bot_api.reply_message(
+                    event.reply_token, 
+                    TextSendMessage(text="❌ Unable to start exam. Please try again.")
+            )
+            return
 
     # 更新用戶活躍狀態
     user_data_manager.update_streak(user_id)
@@ -2677,7 +2702,7 @@ def create_flex_memory_game(cards, game_state, user_id):
     
     # 播放音頻請求
     if text.startswith("Play Audio:"):
-        word = text[5:]  # 提取詞彙
+        word = text.split(":", 1)[1].strip() if ":" in text else ""
         if word in thai_data['basic_words']:
             word_data = thai_data['basic_words'][word]
             if 'audio_url' in word_data and word_data['audio_url']:
@@ -2701,26 +2726,31 @@ def create_flex_memory_game(cards, game_state, user_id):
     
     # 主題選擇處理
     elif text in ["Daily Phrases", "Numbers", "Animals", "Food", "Transportation"]:
-        category = text  # 取出主題名稱
-        # 轉換成英文鍵值
-        category_map = {
-            "Daily Phrases": "daily_phrases",
-            "Numbers": "numbers",
-            "Animals": "animals",
-            "Food": "food",
-            "Transportation": "transportation"
-        }
-        if category in category_map:
-            eng_category = category_map[category]
-            user_data['current_category'] = eng_category
-            messages = start_image_learning(user_id, eng_category)
-            line_bot_api.reply_message(event.reply_token, messages)
+        if 'game_state' in user_data and 'memory_game' in user_data['game_state']:
+            game_response = handle_memory_game(user_id, text)
+            line_bot_api.reply_message(event.reply_token, game_response)
+            return
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
+            category = text  # 取出主題名稱
+        # 轉換成英文鍵值
+            category_map = {
+                "Daily Phrases": "daily_phrases",
+                "Numbers": "numbers",
+                "Animals": "animals",
+                "Food": "food",
+                "Transportation": "transportation"
+        }
+            if category in category_map:
+                eng_category = category_map[category]
+                user_data['current_category'] = eng_category
+                messages = start_image_learning(user_id, eng_category)
+                line_bot_api.reply_message(event.reply_token, messages)
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
             )
-    
+        return
     # 學習模式選擇
     elif text == "Vocabulary":
         messages = start_image_learning(user_id)
