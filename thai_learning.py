@@ -312,7 +312,7 @@ thai_data = {
         'daily_phrases': {
             'name': 'Daily Phrases',
             'words': ['Hello', 'Thank You', 'Goodbye', 'Sorry', 'Good Morning',
-                'Good Night', "You're Welcome", 'How to Get There?', 'How Much?', 'Delicious']
+                'Good Night', "You're Welcome", 'How to Get There', 'How Much?', 'Tasty']
         },
         'numbers': {
             'name': 'Numbers',
@@ -362,7 +362,7 @@ thai_data = {
         'How Much?': {'thai': 'เท่าไหร่', 'pronunciation': 'tao-rai', 'tone': 'mid-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E5%A4%9A%E5%B0%91%E9%8C%A2.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/askprice.jpg'},
-        'Delicious': {'thai': 'อร่อย', 'pronunciation': 'a-roi', 'tone': 'mid-mid',
+        'Tasty': {'thai': 'อร่อย', 'pronunciation': 'a-roi', 'tone': 'mid-mid',
                'audio_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E9%9F%B3%E6%AA%94/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/%E5%A5%BD%E5%90%83.mp3',
                'image_url': 'https://storage.googleapis.com/thai_chatbot/%E6%B3%B0%E6%96%87%E6%95%99%E5%AD%B8%E5%9C%96%E5%BA%AB/%E6%97%A5%E5%B8%B8%E7%94%A8%E8%AA%9E/yummy.jpg'},
         
@@ -1620,7 +1620,7 @@ def handle_text_message(event):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.1")
+                TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
             )
     
     # 學習模式選擇
@@ -1637,7 +1637,7 @@ def handle_text_message(event):
         line_bot_api.reply_message(event.reply_token, messages)
     
     # 進度與導航控制
-    elif text == "下一個詞彙":
+    elif text == "Next Word":
         # 如果有當前主題，在同一主題中選擇新詞彙
         if user_data.get('current_category'):
             category = user_data['current_category']
@@ -1688,12 +1688,12 @@ def handle_text_message(event):
     elif text == "Exam Mode":
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Start Daily Phrases Exam')),
+                QuickReplyButton(action=MessageAction(label='Daily', text='Start Daily Phrases Exam')),
                 QuickReplyButton(action=MessageAction(label='Numbers', text='Start Numbers Exam')),
                 QuickReplyButton(action=MessageAction(label='Animals', text='Start Animals Exam')),
                 QuickReplyButton(action=MessageAction(label='Food', text='Start Food Exam')),
-                QuickReplyButton(action=MessageAction(label='Transportation', text='Start Transportation Exam')),
-                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Full Exam'))
+                QuickReplyButton(action=MessageAction(label='Transport', text='Start Transportation Exam')),
+                QuickReplyButton(action=MessageAction(label='Full Exam', text='Start Full Exam'))
             ]
         )
         line_bot_api.reply_message(
@@ -1769,7 +1769,7 @@ def handle_exam_message(event):
             score = session["correct"]
             
             # 儲存考試結果到 Firebase
-            save_exam_result(user_id, score, total, exam_type="Comprehensive Exam")
+            save_exam_result(user_id, score, total, exam_type="Full Exam")
             
             del exam_sessions[user_id]
             return TextSendMessage(text=f" Exam completed!\nYou answered {score}/{total} questions correctly.")
@@ -1866,7 +1866,7 @@ def send_exam_question(user_id):
 
         if question["type"] == "pronounce":
             return [
-                TextSendMessage(text=f"Question {q_num}/{total}: Please look at the image and say the corresponding Thai word."),
+                TextSendMessage(text=f"Question {q_num}/{total}: Please look at the image and pronounce the corresponding Thai word."),
                 ImageSendMessage(
                     original_content_url=question["image_url"], 
                     preview_image_url=question["image_url"]
@@ -1928,11 +1928,11 @@ def show_category_menu():
     
     quick_reply = QuickReply(
         items=[
-            QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Topic: Daily Phrases')),
-            QuickReplyButton(action=MessageAction(label='Numbers', text='Topic: Numbers')),
-            QuickReplyButton(action=MessageAction(label='Animals', text='Topic: Animals')),
-            QuickReplyButton(action=MessageAction(label='Food', text='Topic: Food')),
-            QuickReplyButton(action=MessageAction(label='Transportation', text='Topic: Transportation'))
+            QuickReplyButton(action=MessageAction(label='Daily', text='Daily Phrases')),
+            QuickReplyButton(action=MessageAction(label='Numbers', text='Numbers')),
+            QuickReplyButton(action=MessageAction(label='Animals', text='Animals')),
+            QuickReplyButton(action=MessageAction(label='Food', text='Food')),
+            QuickReplyButton(action=MessageAction(label='Transport', text='Transportation'))
         ]
     )
     
@@ -1991,9 +1991,9 @@ def start_image_learning(user_id, category=None):
         title="Vocabulary Practice",
         text="Please choose your next step:",
         actions=[
-            MessageAction(label="Pronunciation drill", text="Pronunciation drill"),
+            MessageAction(label="Practice Speaking", text="Pronunciation drill"),
             MessageAction(label="Next Word", text="Next Word"),
-            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
+            MessageAction(label="Main Menu", text="Back to Main Menu")
         ]
     )
     message_list.append(
@@ -2064,7 +2064,7 @@ def start_echo_practice(user_id):
         text="Other Options",
         actions=[
             MessageAction(label="Play Again", text=f"Play Audio: {word_key}"),
-            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
+            MessageAction(label="Main Menu", text="Back to Main Menu")
         ]
     )
     message_list.append(
@@ -2107,9 +2107,9 @@ def start_tone_learning(user_id):
         title="Tone Learning",
         text="Please choose an action",
         actions=[
-            MessageAction(label="Pronunciation drill", text="Pronunciation drill"),
+            MessageAction(label="Practice Speaking", text="Pronunciation drill"),
             MessageAction(label="Vocabulary", text="Vocabulary"),
-            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
+            MessageAction(label="Main Menu", text="Back to Main Menu")
         ]
     )
     message_list.append(
@@ -2152,8 +2152,8 @@ def show_learning_progress(user_id):
         text="Choose your next step:",
         actions=[
             MessageAction(label="Practice WeakWords", text="Practice WeakWords"),
-            MessageAction(label="View Learning Calenda", text="Learning Calendar"),
-            MessageAction(label="Back to Main Menu", text="Back to Main Menu")
+            MessageAction(label="View Learning Calendar", text="Learning Calendar"),
+            MessageAction(label="Main Menu", text="Back to Main Menu")
         ]
     )
     
@@ -2171,7 +2171,7 @@ def show_main_menu():
         items=[
             QuickReplyButton(action=MessageAction(label='Select Topic', text='Select Topic')),
             QuickReplyButton(action=MessageAction(label='Vocabulary', text='Vocabulary')),
-            QuickReplyButton(action=MessageAction(label='Pronunciation drill', text='Pronunciation drill')),
+            QuickReplyButton(action=MessageAction(label='Speaking', text='Pronunciation drill')),
             QuickReplyButton(action=MessageAction(label='Tone Learning', text='Tone Learning')),
             QuickReplyButton(action=MessageAction(label='Memory Game', text='Start MemoryGame')),
             QuickReplyButton(action=MessageAction(label='LearningProgress', text='LearningProgress')),
@@ -2417,11 +2417,11 @@ def handle_memory_game(user_id, message):
         # 顯示主題選單
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Memory Game Topic: Daily Phrases')),
-                QuickReplyButton(action=MessageAction(label='Numbers', text='Memory Game Topic: Numbers')),
-                QuickReplyButton(action=MessageAction(label='Animals', text='Memory Game Topic: Animals')),
-                QuickReplyButton(action=MessageAction(label='Food', text='Memory Game Topic: Food')),
-                QuickReplyButton(action=MessageAction(label='Transportation', text='Memory Game Topic: Transportation'))
+                QuickReplyButton(action=MessageAction(label='Daily', text='Daily Phrases')),
+                QuickReplyButton(action=MessageAction(label='Numbers', text='Numbers')),
+                QuickReplyButton(action=MessageAction(label='Animals', text='Animals')),
+                QuickReplyButton(action=MessageAction(label='Food', text='Food')),
+                QuickReplyButton(action=MessageAction(label='Transport', text='Transportation'))
             ]
         )
         
@@ -2430,9 +2430,8 @@ def handle_memory_game(user_id, message):
             quick_reply=quick_reply
         )
     
-    elif message.startswith("Memory Game Topic" \
-    ":"):
-        category = message.split(":", 1)[1] if ":" in message else ""
+    elif message in ["Daily Phrases", "Numbers", "Animals", "Food", "Transportation"]:
+        category = message
         logger.info(f"Received memory game topic selection: '{category}'")
         
         # 轉換成英文鍵值
@@ -2507,7 +2506,7 @@ def handle_memory_game(user_id, message):
                         quick_reply=QuickReply(
                             items=[
                                 QuickReplyButton(action=MessageAction(label='Play Again', text='Start MemoryGame')),
-                                QuickReplyButton(action=MessageAction(label='Back to Main Menu', text='Back to Main Menu'))
+                                QuickReplyButton(action=MessageAction(label='Main Menu', text='Back to Main Menu'))
                             ]
                         )
                     )
@@ -2701,8 +2700,8 @@ def create_flex_memory_game(cards, game_state, user_id):
         line_bot_api.reply_message(event.reply_token, show_category_menu())
     
     # 主題選擇處理
-    elif text.startswith("Topic:"):
-        category = text[3:]  # 取出主題名稱
+    elif text in ["Daily Phrases", "Numbers", "Animals", "Food", "Transportation"]:
+        category = text  # 取出主題名稱
         # 轉換成英文鍵值
         category_map = {
             "Daily Phrases": "daily_phrases",
@@ -2787,12 +2786,12 @@ def create_flex_memory_game(cards, game_state, user_id):
     elif text == "Exam Mode":
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='Daily Phrases', text='Start Daily Phrases Exam')),
+                QuickReplyButton(action=MessageAction(label='Daily', text='Start Daily Phrases Exam')),
                 QuickReplyButton(action=MessageAction(label='Numbers', text='Start Numbers Exam')),
                 QuickReplyButton(action=MessageAction(label='Animals', text='Start Animals Exam')),
                 QuickReplyButton(action=MessageAction(label='Food', text='Start Food Exam')),
-                QuickReplyButton(action=MessageAction(label='Transportation', text='Start Transportation Exam')),
-                QuickReplyButton(action=MessageAction(label='Comprehensive Exam', text='Start Full Exam'))
+                QuickReplyButton(action=MessageAction(label='Transport', text='Start Transportation Exam')),
+                QuickReplyButton(action=MessageAction(label='Full Exam', text='Start Full Exam'))
             ]
         )
         line_bot_api.reply_message(
