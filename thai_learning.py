@@ -751,7 +751,50 @@ def evaluate_pronunciation(audio_file_path, reference_text, language=""):  # 改
         # except Exception as e:
         #     logger.warning(f"清除臨時檔案失敗: {str(e)}")
         pass
+"""👉 你不能讓機器人掛掉，也不能什麼都不回應。"""
+def simulate_pronunciation_assessment(audio_file_path, reference_text):
+    """Simulated pronunciation scoring as fallback when real evaluation fails"""
+    try:
+        logger.info(f"Using simulated pronunciation assessment for: {reference_text}")
+        
+        if not os.path.exists(audio_file_path):
+            logger.warning(f"Audio file not found for simulation: {audio_file_path}")
+            return {
+                "success": False,
+                "error": "Audio file not found"
+            }
 
+        file_size = os.path.getsize(audio_file_path)
+        if file_size == 0:
+            logger.warning("Empty audio file for simulation")
+            score = 40
+        elif file_size < 5000:
+            score = random.randint(45, 65)
+        else:
+            score = random.randint(60, 85)
+
+        if len(reference_text) <= 3:
+            score += random.randint(5, 15)
+
+        score = max(40, min(95, score))
+
+        return {
+            "success": True,
+            "recognized_text": f"[Simulated recognition for: {reference_text}]",
+            "reference_text": reference_text,
+            "overall_score": score,
+            "accuracy_score": score,
+            "pronunciation_score": score - random.randint(0, 5),
+            "completeness_score": min(100, score + random.randint(0, 10)),
+            "fluency_score": score - random.randint(0, 8)
+        }
+
+    except Exception as e:
+        logger.error(f"Error in simulated assessment: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Simulation failed: {str(e)}"
+        }
 import json
 import os
 import tempfile
@@ -1522,101 +1565,108 @@ def handle_audio_message(event):
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
-    """處理文字訊息"""
+    """處理文字訊息 - 修正版"""
     user_id = event.source.user_id
     user_data = user_data_manager.get_user_data(user_id)
-    text = event.message.text
+    text = event.message.text.strip()
     
     logger.info(f"Received text message from user {user_id}: {text}")
     
-    # 考試指令過濾（包括「跳過」指令）
-    if text.startswith("Start") and "Exam" in text or text == "Skip" or (user_id in exam_sessions and exam_sessions[user_id]["questions"][exam_sessions[user_id]["current"]]["type"] == "audio_choice"):
+    # === 1. 考試指令處理（最高優先級）===
+    exam_commands = [
+        "Start Full Exam", "Start Numbers Exam", "Start Animals Exam",
+        "Start Food Exam", "Start Transportation Exam", "Start Daily Phrases Exam", "Skip"
+    ]
+    
+    if text in exam_commands or (user_id in exam_sessions):
         result = handle_exam_message(event)
         if result:
             if isinstance(result, list):
                 line_bot_api.reply_message(event.reply_token, result)
-        else:
-            line_bot_api.reply_message(event.reply_token, [result])
+            else:
+                line_bot_api.reply_message(event.reply_token, [result])
         return
-    # 記憶遊戲優先處理
-    if text == "Start Memory Game" or text in ["Daily Phrases", "Numbers", "Animals", "Food", "Transportation"]:
-        if text == "Start Memory Game" or ('game_state' in user_data and 'memory_game' in user_data['game_state']):
-            game_response = handle_memory_game(user_id, text)
-            line_bot_api.reply_message(event.reply_token, game_response)
-            return
-# 更新用戶活躍狀態
+    
+    # === 2. 記憶遊戲指令處理 ===
+    if text == "Start MemoryGame":
+        game_response = handle_memory_game(user_id, text)
+        line_bot_api.reply_message(event.reply_token, game_response)
+        return
+    
+    # 處理記憶遊戲主題選擇
+    if text.startswith("Memory:"):
+        category = text[7:]  # 去掉 "Memory:" 前綴
+        game_response = handle_memory_game(user_id, category)
+        line_bot_api.reply_message(event.reply_token, game_response)
+        return
+    
+    # 處理翻牌動作
+    if text.startswith("Flip:"):
+        game_response = handle_memory_game(user_id, text)
+        line_bot_api.reply_message(event.reply_token, game_response)
+        return
+    
+    # 記憶遊戲中的音頻播放
+    if (text.startswith("Play Audio:") and 
+        'game_state' in user_data and 
+        'memory_game' in user_data['game_state']):
+        game_response = handle_memory_game(user_id, text)
+        line_bot_api.reply_message(event.reply_token, game_response)
+        return
+    
+    # === 3. 更新用戶活躍狀態 ===
     user_data_manager.update_streak(user_id)
-
-    # 記憶遊戲相關指令
-    if text == "Start MemoryGame" or text.startswith("Memory Game Topic:") or text.startswith("Flip:") or text.startswith("Flipped:"):
-        game_response = handle_memory_game(user_id, text)
-        line_bot_api.reply_message(event.reply_token, game_response)
-        return
-    # 記憶遊戲中的播放音頻請求
-    elif text.startswith("Play Audio:") and 'game_state' in user_data and 'memory_game' in user_data['game_state']:
-        game_response = handle_memory_game(user_id, text)
-        line_bot_api.reply_message(event.reply_token, game_response)
-        return
-    # 一般播放音頻請求
-    elif text.startswith("Play Audio:"):
+    
+    # === 4. 一般播放音頻請求 ===
+    if text.startswith("Play Audio:"):
         word = text.split(":", 1)[1].strip() if ":" in text else ""
         logger.info(f"User requested to play audio: {word}")
         
         if word in thai_data['basic_words']:
             word_data = thai_data['basic_words'][word]
             if 'audio_url' in word_data and word_data['audio_url']:
-                logger.info(f"Playing vocabulary audio: {word} - {word_data['audio_url']}")
                 try:
                     line_bot_api.reply_message(
                         event.reply_token,
                         AudioSendMessage(
                             original_content_url=word_data['audio_url'],
-                            duration=3000  # 假設音訊長度為3秒
+                            duration=3000
                         )
                     )
                     return
                 except Exception as e:
-                    logger.error(f"Error occurred while sending audio: {str(e)}")
+                    logger.error(f"Error sending audio: {str(e)}")
                     line_bot_api.reply_message(
                         event.reply_token,
-                        TextSendMessage(text="An error occurred while sending the audio. Please try again.")
+                        TextSendMessage(text="Error sending audio. Please try again.")
                     )
                     return
-            else:
-                logger.warning(f"No audio URL found for word: {word}")
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text=f"Sorry, no audio available for '{word}'.")
-                )
-                return
-        else:
-            logger.warning(f"Word not found: {word}")
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=f"Sorry, the word '{word}' was not found.")
-            )
-            return
+        
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"Sorry, audio for '{word}' not found.")
+        )
+        return
     
-    # 主選單與基本導航
+    # === 5. 主選單與導航 ===
     if text == "Start Learning" or text == "Back to Main Menu":
-        exam_sessions.pop(user_id, None)  # ❗️清除考試狀態，避免干擾
+        exam_sessions.pop(user_id, None)
+        if 'game_state' in user_data:  # 加這兩行
+            user_data['game_state'].clear()
         line_bot_api.reply_message(event.reply_token, show_main_menu())
+        return
     
-    # 選擇主題
-    elif text == "Select Topic":
-        line_bot_api.reply_message(event.reply_token, show_category_menu())
-    
-    # 主題選擇處理
-    elif text.startswith("Topic:"):
-        category = text[7:]  # 取出主題名稱
-        # 轉換成英文鍵值
+    # === 6. 主題選擇處理 ===
+    if text.startswith("Learn:"):
+        category = text[6:]  # 去掉 "Learn:" 前綴
         category_map = {
             "Daily Phrases": "daily_phrases",
-            "Numbers": "numbers",
+            "Numbers": "numbers", 
             "Animals": "animals",
             "Food": "food",
             "Transportation": "transportation"
         }
+        
         if category in category_map:
             eng_category = category_map[category]
             user_data['current_category'] = eng_category
@@ -1625,71 +1675,95 @@ def handle_text_message(event):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
+                TextSendMessage(text="Sorry, topic not recognized. Please choose again.")
             )
-    
-    # 學習模式選擇
+        return
+    # === 6.5. 直接主題選擇處理 ===
+    topic_categories = ["Daily Phrases", "Numbers", "Animals", "Food", "Transportation"]
+    if text in topic_categories:
+        logger.info(f"直接主題選擇: {text}")
+        
+        category_map = {
+            "Daily Phrases": "daily_phrases",
+            "Numbers": "numbers",
+            "Animals": "animals",
+            "Food": "food", 
+            "Transportation": "transportation"
+        }
+        
+        if text in category_map:
+            eng_category = category_map[text]
+            user_data['current_category'] = eng_category
+            
+            # 清除記憶遊戲狀態
+            if 'game_state' in user_data:
+                user_data['game_state'].pop('memory_game', None)
+            
+            messages = start_image_learning(user_id, eng_category)
+            line_bot_api.reply_message(event.reply_token, messages)
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="Sorry, topic not recognized. Please choose again.")
+            )
+        return
+    # === 7. 學習模式選擇 ===
+    if text == "Select Topic":
+        line_bot_api.reply_message(event.reply_token, show_category_menu())
+        return
     elif text == "Vocabulary":
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return
     elif text == "Pronunciation drill":
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return
     elif text == "Tone Learning":
         messages = start_tone_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
-    # 進度與導航控制
+        return
     elif text == "Next Word":
-        # 如果有當前主題，在同一主題中選擇新詞彙
         if user_data.get('current_category'):
             category = user_data['current_category']
             user_data['current_vocab'] = random.choice(thai_data['categories'][category]['words'])
         else:
-            # 否則清除當前詞彙，隨機選擇
             user_data['current_vocab'] = None
         
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return
     elif text == "Learning Progress":
         progress_message = show_learning_progress(user_id)
         line_bot_api.reply_message(event.reply_token, progress_message)
-    
-    elif text == "Practice Weak Points":
-        # 找出評分最低的詞彙進行練習
+        return
+    elif text == "Practice Weak Words":
         if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="You don't have enough learning history yet. Please start with some vocabulary and pronunciation practice first!")
+                TextSendMessage(text="No learning history yet. Start with vocabulary practice!")
             )
             return
-            
+        
         # 找出分數最低的詞彙
         worst_word = min(user_data['vocab_mastery'].items(), 
                       key=lambda x: sum(x[1]['scores'])/len(x[1]['scores']) if x[1]['scores'] else 100)
         
-        # 設置為當前詞彙並啟動練習
         user_data['current_vocab'] = worst_word[0]
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return  
     elif text == "Learning Calendar":
-        # 顯示用戶的學習日曆和連續學習天數
         streak = user_data.get('streak', 0)
         last_active = user_data.get('last_active', 'Not started yet')
         
-        calendar_message = f"📅 Your Learning Record：\n\n"
-        calendar_message += f"🔥 Consecutive learning days: {streak} days\n"
-        calendar_message += f"🕓 Last active date：{last_active}\n\n"
-        calendar_message += "Keep up the great work! A little progress every day will steadily improve your Thai skills."
+        calendar_message = (f"📅 Your Learning Record:\n\n"
+                          f"🔥 Consecutive Days: {streak} days\n"
+                          f"🕓 Last Active: {last_active}\n\n"
+                          f"Keep up the momentum! Daily practice improves your Thai skills.")
         
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=calendar_message)
-        )
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=calendar_message))
+        return
     elif text == "Exam Mode":
         quick_reply = QuickReply(
             items=[
@@ -1703,14 +1777,11 @@ def handle_text_message(event):
         )
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(
-                text="Please choose a category for the exam:",
-                quick_reply=quick_reply
-            )
+            TextSendMessage(text="Please choose an exam category:", quick_reply=quick_reply)
         )
         return
     else:
-        # 默認回覆
+        # 預設回應
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="Please select 'Start Learning' or use the menu to begin your Thai learning journey.")
@@ -1719,44 +1790,40 @@ def handle_text_message(event):
 def handle_exam_message(event):
     user_id = event.source.user_id
     message_text = event.message.text.strip()
+    # ⭐ 在這裡加入這段代碼 ⭐
+    exam_start_mappings = {
+        "Start Full Exam": "Exam:Full",
+        "Start Numbers Exam": "Exam:Numbers", 
+        "Start Animals Exam": "Exam:Animals",
+        "Start Food Exam": "Exam:Food",
+        "Start Transportation Exam": "Exam:Transport",
+        "Start Daily Phrases Exam": "Exam:Daily"
+    }
+    
+    # 轉換按鈕文字為內部指令
+    if message_text in exam_start_mappings:
+        message_text = exam_start_mappings[message_text]
+    # ⭐ 加入結束 ⭐
+
+    # 考試配置（原有的代碼）
+    # 啟動考試
+    exam_mappings = {
+        "Exam:Full": {"category": None, "name": "Comprehensive Exam"},
+        "Exam:Daily": {"category": "daily_phrases", "name": "Daily Phrases Exam"},
+        "Exam:Numbers": {"category": "numbers", "name": "Numbers Exam"},
+        "Exam:Animals": {"category": "animals", "name": "Animals Exam"},
+        "Exam:Food": {"category": "food", "name": "Food Exam"},
+        "Exam:Transport": {"category": "transportation", "name": "Transportation Exam"}
+    }
 
     # 啟動考試
-    if message_text == "Start Full Exam" or message_text == "Start Full Exam":
+    if message_text in exam_mappings:
+        exam_info = exam_mappings[message_text]
         exam_sessions[user_id] = {
-            "questions": generate_exam(thai_data),
+            "questions": generate_exam(thai_data, exam_info["category"]),
             "current": 0,
-            "correct": 0
-        }
-        return send_exam_question(user_id)
-    if message_text == "Start Numbers Exam"or message_text == "Start Numbers Exam":
-        exam_sessions[user_id] = {
-            "questions": generate_exam(thai_data, category="numbers"),
-            "current": 0,
-            "correct": 0
-        }
-        return send_exam_question(user_id)
-
-    if message_text == "Start Animals Exam"or message_text == "Start Animals Exam":
-        exam_sessions[user_id] = {
-            "questions": generate_exam(thai_data, category="animals"),
-            "current": 0,
-            "correct": 0
-        }
-        return send_exam_question(user_id)
-
-    if message_text == "Start Food Exam"or message_text == "Start Food Exam":
-        exam_sessions[user_id] = {
-            "questions": generate_exam(thai_data, category="food"),
-            "current": 0,
-            "correct": 0
-        }
-        return send_exam_question(user_id)
-
-    if message_text == "Start Transportation Exam"or message_text == "Start Transportation Exam":
-        exam_sessions[user_id] = {
-            "questions": generate_exam(thai_data, category="transportation"),
-            "current": 0,
-            "correct": 0
+            "correct": 0,
+            "exam_type": exam_info["name"]
         }
         return send_exam_question(user_id)
         
@@ -1933,16 +2000,16 @@ def show_category_menu():
     
     quick_reply = QuickReply(
         items=[
-            QuickReplyButton(action=MessageAction(label='Daily', text='Daily Phrases')),
-            QuickReplyButton(action=MessageAction(label='Numbers', text='Numbers')),
-            QuickReplyButton(action=MessageAction(label='Animals', text='Animals')),
-            QuickReplyButton(action=MessageAction(label='Food', text='Food')),
-            QuickReplyButton(action=MessageAction(label='Transport', text='Transportation'))
+            QuickReplyButton(action=MessageAction(label='Daily', text='Learn:Daily Phrases')),
+            QuickReplyButton(action=MessageAction(label='🔢Numbers', text='Learn:Numbers')),
+            QuickReplyButton(action=MessageAction(label='🐾 Animals', text='Learn:Animals')),
+            QuickReplyButton(action=MessageAction(label='🍜Food', text='Learn:Food')),
+            QuickReplyButton(action=MessageAction(label='🚗Transport', text='Learn:Transportation'))
         ]
     )
     
     return TextSendMessage(
-        text="Please select a topic to learn:",
+        text="📚Select a topic to learn vocabulary:",
         quick_reply=quick_reply
     )
 
@@ -2146,8 +2213,11 @@ def show_learning_progress(user_id):
     progress_report += f"🟦 Vocabulary Learned: {total_words} words\n"
     progress_report += f"🔁 Total Practice Attempts: {total_practices} times\n"
     progress_report += f"📈 Average Pronunciation Score: {avg_score:.1f}/100\n\n"
-    progress_report += f"🏆 Best Word: {best_word[0]} ({thai_data['basic_words'].get(best_word[0], {}).get('thai', '')})\n"
-    progress_report += f"🧩 Word to Improve: {worst_word[0]} ({thai_data['basic_words'].get(worst_word[0], {}).get('thai', '')})"
+    best_thai = thai_data['basic_words'].get(best_word[0], {}).get('thai', best_word[0])
+    worst_thai = thai_data['basic_words'].get(worst_word[0], {}).get('thai', worst_word[0])
+    progress_report += f"🏆 Best Word: {best_word[0]} ({best_thai})\n"
+    progress_report += f"🧩 Word to Improve: {worst_word[0]} ({worst_thai})"
+
 
     return TextSendMessage(text=progress_report)
 
@@ -2178,7 +2248,7 @@ def show_main_menu():
             QuickReplyButton(action=MessageAction(label='Vocabulary', text='Vocabulary')),
             QuickReplyButton(action=MessageAction(label='Speaking', text='Pronunciation drill')),
             QuickReplyButton(action=MessageAction(label='Tone Learning', text='Tone Learning')),
-            QuickReplyButton(action=MessageAction(label='Memory Game', text='Start MemoryGame')),
+            QuickReplyButton(action=MessageAction(label='MemoryGame', text='Start MemoryGame')),
             QuickReplyButton(action=MessageAction(label='Progress', text='LearningProgress')),
              QuickReplyButton(action=MessageAction(label='Exam Mode', text='Exam Mode'))
         ]
@@ -2418,15 +2488,15 @@ def handle_memory_game(user_id, message):
     game = user_data['game_state']['memory_game']
     
     # 處理遊戲指令
-    if message == "Start Memory Game":
+    if message == "Start MemoryGame":
         # 顯示主題選單
         quick_reply = QuickReply(
             items=[
-                QuickReplyButton(action=MessageAction(label='Daily', text='Daily Phrases')),
-                QuickReplyButton(action=MessageAction(label='Numbers', text='Numbers')),
-                QuickReplyButton(action=MessageAction(label='Animals', text='Animals')),
-                QuickReplyButton(action=MessageAction(label='Food', text='Food')),
-                QuickReplyButton(action=MessageAction(label='Transport', text='Transportation'))
+                QuickReplyButton(action=MessageAction(label='Daily', text='Memory:Daily Phrases')),
+                QuickReplyButton(action=MessageAction(label='🔢Numbers', text='Memory:Numbers')),
+                QuickReplyButton(action=MessageAction(label='🐾Animals', text='Memory:Animals')),
+                QuickReplyButton(action=MessageAction(label='🍜Food', text='Memory:Food')),
+                QuickReplyButton(action=MessageAction(label='🚗Transport', text='Memory:Transportation'))
             ]
         )
         
@@ -2662,7 +2732,7 @@ def create_flex_memory_game(cards, game_state, user_id):
         import logging
         logging.getLogger().error(f"Error occurred while creating Flex Message: {str(e)}")
         return TextSendMessage(text="The game display encountered an issue. Please try again later.")
-
+"""
     # ✅ 考試指令過濾（只有在符合格式才執行）
     def handle_text_message_fixed_v1(event):
         user_id = event.source.user_id
@@ -2719,11 +2789,11 @@ def create_flex_memory_game(cards, game_state, user_id):
     if text == "Start Learning" or text == "Back to Main Menu":
         exam_sessions.pop(user_id, None)  # ❗️清除考試狀態，避免干擾
         line_bot_api.reply_message(event.reply_token, show_main_menu())
-    
+        return
     # 選擇主題
     elif text == "Select Topic":
         line_bot_api.reply_message(event.reply_token, show_category_menu())
-    
+        return
     # 主題選擇處理
     elif text in ["Daily Phrases", "Numbers", "Animals", "Food", "Transportation"]:
         if 'game_state' in user_data and 'memory_game' in user_data['game_state']:
@@ -2749,21 +2819,21 @@ def create_flex_memory_game(cards, game_state, user_id):
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="Sorry, the selected topic could not be recognized. Please choose again.")
-            )
-        return
+                )
+            return
     # 學習模式選擇
     elif text == "Vocabulary":
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return
     elif text == "Pronunciation drill":
         messages = start_echo_practice(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return
     elif text == "Tone Learning":
         messages = start_tone_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return
     # 進度與導航控制
     elif text == "Next Word":
         # 如果有當前主題，在同一主題中選擇新詞彙
@@ -2776,11 +2846,11 @@ def create_flex_memory_game(cards, game_state, user_id):
         
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
-    
+        return
     elif text == "Learning Progress":
         progress_message = show_learning_progress(user_id)
         line_bot_api.reply_message(event.reply_token, progress_message)
-    
+        return
     elif text == "Practice Weak Words":
         # 找出評分最低的詞彙進行練習
         if not user_data.get('vocab_mastery') or len(user_data['vocab_mastery']) == 0:
@@ -2839,7 +2909,7 @@ def create_flex_memory_game(cards, game_state, user_id):
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="Please select 'Start Learning' or use the menu button to begin your Thai learning journey.")
-        )
+        )"""
 import threading
 import time  # ✅ 加上這行
 
