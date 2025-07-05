@@ -1579,13 +1579,19 @@ def handle_text_message(event):
     ]
     
     if text in exam_commands or (user_id in exam_sessions):
-        result = handle_exam_message(event)
-        if result:
-            if isinstance(result, list):
-                line_bot_api.reply_message(event.reply_token, result)
-            else:
-                line_bot_api.reply_message(event.reply_token, [result])
-        return
+    # 如果在考試中但用戶說 Start Learning，則中斷考試
+        if text == "Start Learning" and user_id in exam_sessions:
+            exam_sessions.pop(user_id, None)
+            line_bot_api.reply_message(event.reply_token, show_main_menu())
+            return
+    
+    result = handle_exam_message(event)
+    if result:
+        if isinstance(result, list):
+            line_bot_api.reply_message(event.reply_token, result)
+        else:
+            line_bot_api.reply_message(event.reply_token, [result])
+    return
     
     # === 2. 記憶遊戲指令處理 ===
     if text == "Start MemoryGame":
@@ -1601,7 +1607,7 @@ def handle_text_message(event):
         return
     
     # 處理翻牌動作
-    if text.startswith("Flip:"):
+    if text.startswith("Flip:") or text.startswith("Flip Card:"):
         game_response = handle_memory_game(user_id, text)
         line_bot_api.reply_message(event.reply_token, game_response)
         return
