@@ -1855,61 +1855,61 @@ def handle_exam_message(event):
         # 傳送下一題
         return send_exam_question(user_id)
         
-    # 正在考試狀態中（處理作答）
+# 正在考試狀態中（處理作答）
     if user_id in exam_sessions:
-       session = exam_sessions[user_id]
-       question = session["questions"][session["current"]]
-    
-    # 判斷答題類型
-    if question["type"] == "audio_choice":
-        user_answer = message_text.strip()
-        correct_answer = question["answer"]
+        session = exam_sessions[user_id]
+        question = session["questions"][session["current"]]
         
-        # 檢查答案是否正確
-        is_correct = score_image_choice(user_answer, correct_answer)
-        
-        # 準備反饋訊息
-        if is_correct:
-            session["correct"] += 1
-            feedback = f"✅ Correct! \"{user_answer}\" is the right answer."
+        # 判斷答題類型 - 移到 if 內部
+        if question["type"] == "audio_choice":
+            user_answer = message_text.strip()
+            correct_answer = question["answer"]
+            
+            # 檢查答案是否正確
+            is_correct = score_image_choice(user_answer, correct_answer)
+            
+            # 準備反饋訊息
+            if is_correct:
+                session["correct"] += 1
+                feedback = f"✅ Correct! \"{user_answer}\" is the right answer."
+            else:
+                feedback = f"❌ Incorrect. The correct answer is \"{correct_answer}\"."
+            
+            feedback_message = TextSendMessage(text=feedback)
         else:
-            feedback = f"❌ Incorrect. The correct answer is \"{correct_answer}\"."
+            feedback_message = None
+
+        # 換下一題 - 也要在 if 內部
+        session["current"] += 1
+        if session["current"] >= len(session["questions"]):
+            total = len(session["questions"])
+            score = session["correct"]
+
+            # 儲存考試結果到 Firebase
+            save_exam_result(user_id, score, total, exam_type="Full Exam")
+
+            del exam_sessions[user_id]
+            
+            # 如果有反饋，返回反饋和結果；否則只返回結果
+            if feedback_message:
+                return [
+                    feedback_message,
+                    TextSendMessage(text=f"✅ Exam completed!\nYou answered {score}/{total} questions correctly.")
+                ]
+            else:
+                return TextSendMessage(text=f"✅ Exam completed!\nYou answered {score}/{total} questions correctly.")
+
+        # 還有更多題目
+        next_question = send_exam_question(user_id)
         
-        feedback_message = TextSendMessage(text=feedback)
-    else:
-        feedback_message = None
-
-    # 換下一題
-    session["current"] += 1
-    if session["current"] >= len(session["questions"]):
-        total = len(session["questions"])
-        score = session["correct"]
-
-        # 儲存考試結果到 Firebase
-        save_exam_result(user_id, score, total, exam_type="Full Exam")
-
-        del exam_sessions[user_id]
-        
-        # 如果有反饋，返回反饋和結果；否則只返回結果
+        # 如果有反饋，返回反饋和下一題；否則只返回下一題
         if feedback_message:
-            return [
-                feedback_message,
-                TextSendMessage(text=f"✅ Exam completed!\nYou answered {score}/{total} questions correctly.")
-            ]
+            if isinstance(next_question, list):
+                return [feedback_message] + next_question
+            else:
+                return [feedback_message, next_question]
         else:
-            return TextSendMessage(text=f"✅ Exam completed!\nYou answered {score}/{total} questions correctly.")
-
-    # 還有更多題目
-    next_question = send_exam_question(user_id)
-    
-    # 如果有反饋，返回反饋和下一題；否則只返回下一題
-    if feedback_message:
-        if isinstance(next_question, list):
-            return [feedback_message] + next_question
-        else:
-            return [feedback_message, next_question]
-    else:
-        return next_question
+            return next_question
 
 # 非考試狀態，交由其他處理
     return None
