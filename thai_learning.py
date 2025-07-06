@@ -917,6 +917,7 @@ def transcribe_audio_google(gcs_url):
 # === 考試模組 ===
 
 def generate_exam(thai_data, category=None):
+    """生成考試題目，確保單次考試不重複出題"""
     all_words = thai_data['basic_words']
     
     # 篩選分類
@@ -926,31 +927,61 @@ def generate_exam(thai_data, category=None):
     else:
         word_items = all_words
 
-    selected_items = random.sample(list(word_items.items()), 10)
+    # 確保有足夠的詞彙，並隨機選擇10個不重複的詞彙
+    available_words = list(word_items.items())
+    
+    if len(available_words) < 10:
+        # 如果詞彙不足10個，就用全部可用的
+        selected_items = available_words
+    else:
+        # 隨機選擇10個不重複的詞彙
+        selected_items = random.sample(available_words, 10)
 
-    # 題目格式化
+    # 生成題目
     questions = []
+    used_words = set()  # 追蹤已使用的詞彙
+    
     for i, (key, item) in enumerate(selected_items):
-        if i < 2:
-            q_type = "pronounce"
+        # 跳過已使用的詞彙（雙重保險）
+        if key in used_words:
+            continue
+        used_words.add(key)
+        
+        if i < 2:  # 前兩題是發音題
             questions.append({
-                "type": q_type,
+                "type": "pronounce",
                 "word": key,
                 "image_url": item.get("image_url"),
                 "thai": item["thai"],
             })
-        else:
-            # audio_choice 題型：播放音檔選圖片
-            all_choices = random.sample(list(word_items.items()), 3)
-            correct = random.choice(all_choices)
+        else:  # 其餘是選擇題
+            # 為選擇題生成不重複的選項
+            remaining_words = [
+                (k, v) for k, v in word_items.items() 
+                if k not in used_words  # 確保選項不重複主題
+            ]
+            
+            if len(remaining_words) >= 2:
+                # 隨機選擇2個錯誤選項
+                wrong_choices = random.sample(remaining_words, 2)
+            else:
+                # 如果不夠，就用剩餘的全部
+                wrong_choices = remaining_words
+            
+            # 組合所有選項（正確答案 + 錯誤選項）
+            all_choices = [(key, item)] + wrong_choices
+            
+            # 隨機排列選項
+            random.shuffle(all_choices)
+            
             questions.append({
                 "type": "audio_choice",
-                "audio_url": correct[1].get("audio_url"),
+                "audio_url": item.get("audio_url"),
                 "choices": [
                     {"word": w[0], "image_url": w[1].get("image_url")}
                     for w in all_choices
                 ],
-                "answer": correct[0]
+                "answer": key
             })
 
     return questions
