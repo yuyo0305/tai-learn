@@ -1576,8 +1576,8 @@ def handle_text_message(event):
     exam_commands = [
         "Start Full Exam", "Start Numbers Exam", "Start Animals Exam",
         "Start Food Exam", "Start Transportation Exam", "Start Daily Phrases Exam", "Skip"
-    ]
-    
+]
+
     if text in exam_commands or (user_id in exam_sessions):
     # 如果在考試中但用戶說 Start Learning，則中斷考試
         if text == "Start Learning" and user_id in exam_sessions:
@@ -1585,13 +1585,13 @@ def handle_text_message(event):
             line_bot_api.reply_message(event.reply_token, show_main_menu())
             return
     
-    result = handle_exam_message(event)
-    if result:
-        if isinstance(result, list):
-            line_bot_api.reply_message(event.reply_token, result)
-        else:
-            line_bot_api.reply_message(event.reply_token, [result])
-    return
+        result = handle_exam_message(event)
+        if result:
+            if isinstance(result, list):
+                line_bot_api.reply_message(event.reply_token, result)
+            else:
+                line_bot_api.reply_message(event.reply_token, [result])
+        return
     
     # === 2. 記憶遊戲指令處理 ===
     if text == "Start MemoryGame":
@@ -1739,7 +1739,7 @@ def handle_text_message(event):
         messages = start_image_learning(user_id)
         line_bot_api.reply_message(event.reply_token, messages)
         return
-    elif text == "Learning Progress":
+    elif text == "Learning Progress" or text == "LearningProgress":
         progress_message = show_learning_progress(user_id)
         line_bot_api.reply_message(event.reply_token, progress_message)
         return
